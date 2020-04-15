@@ -1,0 +1,132 @@
+{
+    "ver": "0.0.1",
+    "authors": [
+        "swwang"
+    ],
+    "contact": "",
+    "categories": ["active"],
+    "widgets": {
+        "input": null,
+        "output": null
+    },
+    "parameters": [ 
+        {
+            "id": "amplicon_set_upa",
+            "optional": false,
+            "advanced": false,
+            "allow_multiple": false,
+            "default_values": [ "" ],
+            "field_type": "text",
+            "text_options": {
+                "valid_ws_types": [ "KBaseExperiments.AmpliconSet" ]
+            }
+        },{
+            "id": "output_name",
+            "optional": true,
+            "advanced": true,
+            "allow_multiple": false,
+            "default_values": [ "" ],
+            "field_type": "text",
+            "text_options": {
+                "valid_ws_type": ["KBaseExperiments.AmpliconSet", "KBaseMatrices.AmpliconMatrix"],
+                "is_output_name": true
+            }
+        },{
+            "id": "conf",
+            "optional": true,
+            "advanced": true,
+            "allow_multiple": false,
+            "field_type": "text",
+            "default_values": [ "0.8" ],
+            "text_options": {
+                "validate_as": "float",
+                "min_float": "0",
+                "max_float": "1"
+            }
+        },{
+            "id": "gene",
+            "optional": true,
+            "advanced": true,
+            "allow_multiple": false,
+            "default_values": [ "16srrna" ],
+            "field_type": "dropdown",
+            "dropdown_options": {
+                "options": [
+                    {
+                        "value": "16srrna",
+                        "display": "16srrna",
+                        "id": "16srrna",
+                        "ui-name": "16srrna"
+                     },{
+                        "value": "fungallsu",
+                        "display": "fungallsu",
+                        "id": "fungallsu",
+                        "ui-name": "fungallsu"
+                    },{
+                        "value": "fungalits_warcup",
+                        "display": "fungalits_warcup",
+                        "id": "fungalits_warcup",
+                        "ui-name": "fungalits_warcup"
+                    },{
+                        "value": "fungalits_unite",
+                        "display": "fungalits_unite",
+                        "id": "fungalits_unite",
+                        "ui-name": "fungalits_unite"
+                    }
+                ]
+            }
+        },{
+            "id": "minWords",
+            "optional": true,
+            "advanced": true,
+            "allow_multiple": false,
+            "field_type": "text",
+            "default_values": [ "" ],
+            "text_options": {
+                "validate_as": "int",
+                "min_int": 5
+            }
+        }
+    ],
+    "behavior": {
+        "service-mapping": {
+            "url": "",
+            "name": "kb_RDP_Classifier",
+            "method": "classify",
+            "input_mapping": [
+                {
+                    "narrative_system_variable": "workspace",
+                    "target_property": "workspace_name"
+                },{
+                    "narrative_system_variable": "workspace_id",
+                    "target_property": "workspace_id"
+                },{
+                    "input_parameter": "amplicon_set_upa",
+                    "target_property": "amplicon_set_upa"
+                },{
+                    "input_parameter": "output_name",
+                    "target_property": "output_name"
+                },{
+                    "input_parameter": "conf",
+                    "target_property": "conf"
+                },{
+                    "input_parameter": "gene",
+                    "target_property": "gene"
+                },{
+                    "input_parameter": "minWords",
+                    "target_property": "minWords"
+                }
+            ],
+            "output_mapping": [
+                {
+                    "service_method_output_path": [0,"report_name"],
+                    "target_property": "report_name"
+                },{
+                    "service_method_output_path": [0,"report_ref"],
+                    "target_property": "report_ref"
+                }
+            ]
+        }
+    },
+    "job_id_output_field": "docker"
+}
