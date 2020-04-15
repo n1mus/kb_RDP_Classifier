@@ -38,6 +38,8 @@ class AmpliconSet:
 
 
     def _get_obj(self):
+        logging.info('Loading object data for %s' % self.upa)
+
         obj = _globals.dfu.get_objects({
             'object_refs': [self.upa]
             })
