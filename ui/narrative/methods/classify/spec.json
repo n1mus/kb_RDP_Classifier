@@ -102,7 +102,8 @@
                     "target_property": "workspace_id"
                 },{
                     "input_parameter": "amplicon_set_upa",
-                    "target_property": "amplicon_set_upa"
+                    "target_property": "amplicon_set_upa",
+                    "target_type_transform": "resolved-ref"
                 },{
                     "input_parameter": "output_name",
                     "target_property": "output_name"
