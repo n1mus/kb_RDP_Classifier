@@ -17,7 +17,7 @@ RUN curl --location https://sourceforge.net/projects/rdp-classifier/files/latest
 unzip rdp_classifier.zip && \
 rm rdp_classifier.zip
 
-RUN pip install pandas dotmap
+RUN pip install pandas dotmap plotly
 
 # -----------------------------------------
 

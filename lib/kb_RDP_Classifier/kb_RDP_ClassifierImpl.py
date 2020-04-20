@@ -11,6 +11,7 @@ from installed_clients.WorkspaceClient import Workspace
 from installed_clients.DataFileUtilClient import DataFileUtil
 from installed_clients.KBaseReportClient import KBaseReport
 
+from .util.report import HTMLReportWriter
 from .util.dprint import dprint
 from .util.config import reset, _globals
 from .util.kbase_obj import AmpliconSet, AmpliconMatrix, AttributeMapping
@@ -102,15 +103,19 @@ class kb_RDP_Classifier:
         #####
 
 
-        # input object, which has the amplicons
-        amp_set = AmpliconSet(params['amplicon_set_upa'], mini_data=params.get('mini_data'))
-        amp_set.to_fasta()
+        if params.get('skip_obj'):
+            dprint('Skip loading objects')
+        
+        else:
+            # input object, which has the amplicons
+            amp_set = AmpliconSet(params['amplicon_set_upa'], mini_data=params.get('mini_data'))
+            amp_set.to_fasta()
 
-        # intermediate referenced
-        amp_mat = AmpliconMatrix(amp_set.amp_mat_upa)
+            # intermediate referenced
+            amp_mat = AmpliconMatrix(amp_set.amp_mat_upa)
 
-        # 
-        row_attr_map = AttributeMapping(amp_mat.row_attr_map_upa)
+            # 
+            row_attr_map = AttributeMapping(amp_mat.row_attr_map_upa)
 
 
 
@@ -145,15 +150,20 @@ class kb_RDP_Classifier:
         ####
         #####
 
-
         out_filterByConf_flpth = os.path.join(_globals.run_dir, 'out_filterByConf.tsv')
+        out_fixRank_flpth = os.path.join(_globals.run_dir, 'out_fixRank.tsv')
 
 
-        cmd = [
-            'java -Xmx1g -jar %s classify %s' % (_globals.classifierJar_flpth, amp_set.fasta_flpth),
-            '--format filterByConf',
-            '--outputFile %s' % out_filterByConf_flpth,
-            ]
+        if params.get('skip_run'):
+            dprint('Skipping run')
+            dprint(f'cp /kb/module/test/data/* {_globals.run_dir}', run='cli')
+
+        else:
+          
+            cmd_base = 'java -Xmx1g -jar %s classify %s ' % (_globals.classifierJar_flpth, amp_set.fasta_flpth) + ' '.join(cmd_params)
+            
+            cmd_fixRank = cmd_base + ' --format filterByConf --outputFile %s' % out_filterByConf_flpth
+            cmd_filterByConf = cmd_base + ' --format fixRank --outputFile %s' % out_fixRank_flpth
 
 
 
@@ -167,22 +177,27 @@ class kb_RDP_Classifier:
         #####
 
 
+        if params.get('skip_run'):
+            dprint('Skipping run')
 
-        subproc_run = functools.partial(
-            subprocess.run, shell=True, executable='/bin/bash', stdout=sys.stdout, stderr=sys.stderr)
+        else:
 
-
-        def run_check(cmd, subproc_run_kwargs={}):
-            logging.info('Running cmd `%s`' % cmd)
-            completed_proc = subproc_run(cmd, **subproc_run_kwargs)
-            if completed_proc.returncode != 0:
-                raise NonZeroReturnException(
-                    "Command: `%s` exited with non-zero return code: `%d`. "
-                    "Check logs for more details" %
-                    (cmd, completed_proc.returncode))
+            subproc_run = functools.partial(
+                subprocess.run, shell=True, executable='/bin/bash', stdout=sys.stdout, stderr=sys.stderr)
 
 
-        run_check(' '.join(cmd + cmd_params))
+            def run_check(cmd, subproc_run_kwargs={}):
+                logging.info('Running cmd `%s`' % cmd)
+                completed_proc = subproc_run(cmd, **subproc_run_kwargs)
+                if completed_proc.returncode != 0:
+                    raise NonZeroReturnException(
+                        "Command: `%s` exited with non-zero return code: `%d`. "
+                        "Check logs for more details" %
+                        (cmd, completed_proc.returncode))
+
+
+            run_check(cmd_fixRank)
+            run_check(cmd_filterByConf)
 
 
 
@@ -194,22 +209,27 @@ class kb_RDP_Classifier:
         ####
         #####
 
-        source = 'kb_RDP_Classifier/classify'
-        attribute = 'RDP Classifier Taxonomy, ' + \
-            'conf=%.2f, gene=%s, minWords=%s' % (
-                params['conf'] if params['conf'] else defaults['conf'],
-                params['gene'] if params['gene'] else defaults['gene'],
-                str(params['minWords']) if params['minWords'] else 'default') 
+        if params.get('skip_obj'):
+            dprint('Skipping obj')
+
+        else:
+
+            source = 'kb_RDP_Classifier/classify'
+            attribute = 'RDP Classifier Taxonomy, ' + \
+                'conf=%.2f, gene=%s, minWords=%s' % (
+                    params['conf'] if params['conf'] else defaults['conf'],
+                    params['gene'] if params['gene'] else defaults['gene'],
+                    str(params['minWords']) if params['minWords'] else 'default') 
 
 
-        row_attr_map.add_attribute_slot(attribute)
+            row_attr_map.add_attribute_slot(attribute)
 
-        id2taxStr_d = AttributeMapping.parse_filterByConf(out_filterByConf_flpth)
-        dprint('id2taxStr_d', 'len(id2taxStr_d)', run=locals())
-        row_attr_map.update_attribute(id2taxStr_d, attribute, source)
+            id2taxStr_d = AttributeMapping.parse_filterByConf(out_filterByConf_flpth)
+            dprint('id2taxStr_d', 'len(id2taxStr_d)', run=locals())
+            row_attr_map.update_attribute(id2taxStr_d, attribute, source)
 
-        
-        dprint('row_attr_map.obj["attributes"]', 'row_attr_map.obj["instances"]', max_lines=200, run=locals())
+            
+            dprint('row_attr_map.obj["attributes"]', 'row_attr_map.obj["instances"]', max_lines=200, run=locals())
 
 
 
@@ -219,7 +239,8 @@ class kb_RDP_Classifier:
         ####
         #####
 
-        if _globals.debug and params.get('skip_save_obj'):
+        if params.get('skip_obj'):
+            dprint('Skipping obj')
             objects_created = []
 
         else:
@@ -235,10 +256,33 @@ class kb_RDP_Classifier:
             amp_set_upa_new = amp_set.save()
 
             objects_created = [
-                {'ref': row_attr_map_upa_new, 'description': 'Added and populated attribute `%s`' % attribute},
+                {'ref': row_attr_map_upa_new, 'description': 'Added or updated attribute `%s`' % attribute},
                 {'ref': amp_mat_upa_new, 'description': 'Updated `row_attributemapping_ref`'},
                 {'ref': amp_set_upa_new, 'description': 'Updated `amplicon_matrix_ref`'},
             ]
+
+
+
+
+
+
+
+        #
+        ##
+        ### html report
+        ####
+        #####
+
+
+        hrw = HTMLReportWriter(out_fixRank_flpth, out_filterByConf_flpth, params.get('conf', defaults['conf']))
+        hrw.write()
+
+
+
+
+
+
+
 
 
 
@@ -257,7 +301,7 @@ class kb_RDP_Classifier:
 
         def dir_to_shock(dir_path, name, description):
             '''
-            For regular directories or html directories
+            For regular directories, html directories, or flat files
             
             name - for regular directories: the name of the flat (zip) file returned to ui
                    for html directories: the name of the html file
@@ -274,6 +318,7 @@ class kb_RDP_Classifier:
                 'description': description
                 }
 
+        shockInfo_report = dir_to_shock(hrw.html_flpth, os.path.basename(hrw.html_flpth), 'Report html')
         shockInfo_retFiles = dir_to_shock(_globals.run_dir, 'RDP_classifier_results.zip', 'Input and output files')
 
 

@@ -19,10 +19,10 @@ from kb_RDP_Classifier.util.error import *
 
 
 params_debug = {
-    #'skip_run': True,
+    'skip_run': True,
     'mini_data': True,
-    'skip_save_obj': True,
-    'skip_save_retFiles': True,
+    'skip_obj': True,
+    #'skip_save_retFiles': True,
     }
 
 params_rdp_classifier = {

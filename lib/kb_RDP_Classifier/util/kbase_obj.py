@@ -49,16 +49,16 @@ class AmpliconSet:
         self.amp_mat_upa = self.obj['amplicon_matrix_ref']
 
 
-    def to_fasta(self):
-        fasta_flpth = os.path.join(_globals.run_dir, 'study_seqs.fna')
+    def to_fasta(self, fasta_flnm='study_seqs.fna'):
+        fasta_flpth = os.path.join(_globals.run_dir, fasta_flnm)
         
         logging.info(f'Writing fasta to {fasta_flpth}')
 
         amplicon_d = self.obj['amplicons']
         
         with open(fasta_flpth, 'w') as fp:
-            for i, (ASV_id, d) in enumerate(amplicon_d.items()):
-                fp.write('>' + ASV_id + '\n')
+            for i, (id, d) in enumerate(amplicon_d.items()):
+                fp.write('>' + id + '\n')
                 fp.write(d['consensus_sequence'] + '\n')
 
                 if _globals.debug and self.mini_data and i > 20:
