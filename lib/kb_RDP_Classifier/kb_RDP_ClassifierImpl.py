@@ -134,6 +134,11 @@ class kb_RDP_Classifier:
             'minWords': None,
         }
 
+        params_prose = { # for printing
+            'conf': '%.2f' % params['conf'] if params['conf'] else defaults['conf'],
+            'gene': params['gene'] if params['gene'] else defaults['gene'],
+            'minWords': str(params['minWords']) if params['minWords'] else 'default'
+        }
 
         cmd_params = []
         for key, value in defaults.items():
@@ -158,13 +163,16 @@ class kb_RDP_Classifier:
             dprint('Skipping run')
             dprint(f'cp /kb/module/test/data/* {_globals.run_dir}', run='cli')
 
+            cmd_fixRank = 'Skip'
+            cmd_filterByConf = 'Skip'
+
+
         else:
           
             cmd_base = 'java -Xmx1g -jar %s classify %s ' % (_globals.classifierJar_flpth, amp_set.fasta_flpth) + ' '.join(cmd_params)
             
             cmd_fixRank = cmd_base + ' --format filterByConf --outputFile %s' % out_filterByConf_flpth
             cmd_filterByConf = cmd_base + ' --format fixRank --outputFile %s' % out_fixRank_flpth
-
 
 
 
@@ -216,10 +224,8 @@ class kb_RDP_Classifier:
 
             source = 'kb_RDP_Classifier/classify'
             attribute = 'RDP Classifier Taxonomy, ' + \
-                'conf=%.2f, gene=%s, minWords=%s' % (
-                    params['conf'] if params['conf'] else defaults['conf'],
-                    params['gene'] if params['gene'] else defaults['gene'],
-                    str(params['minWords']) if params['minWords'] else 'default') 
+                'conf=%s, gene=%s, minWords=%s' % (
+                params_prose['conf'], params_prose['gene'], params_prose['minWords'])
 
 
             row_attr_map.add_attribute_slot(attribute)
@@ -229,7 +235,7 @@ class kb_RDP_Classifier:
             row_attr_map.update_attribute(id2taxStr_d, attribute, source)
 
             
-            dprint('row_attr_map.obj["attributes"]', 'row_attr_map.obj["instances"]', max_lines=200, run=locals())
+            dprint('row_attr_map.obj["attributes"]', 'row_attr_map.obj["instances"]', run=locals())
 
 
 
@@ -253,7 +259,7 @@ class kb_RDP_Classifier:
             amp_mat_upa_new = amp_mat.save()
 
             amp_set.update_amplicon_matrix_ref(amp_mat_upa_new)
-            amp_set_upa_new = amp_set.save()
+            amp_set_upa_new = amp_set.save(name=params.get('output_name'))
 
             objects_created = [
                 {'ref': row_attr_map_upa_new, 'description': 'Added or updated attribute `%s`' % attribute},
@@ -274,7 +280,9 @@ class kb_RDP_Classifier:
         #####
 
 
-        hrw = HTMLReportWriter(out_fixRank_flpth, out_filterByConf_flpth, params.get('conf', defaults['conf']))
+        hrw = HTMLReportWriter(out_files=[out_fixRank_flpth, out_filterByConf_flpth], 
+                            params_prose=params_prose,
+                            cmd_l=[cmd_fixRank, cmd_filterByConf])
         hrw.write()
 
 
@@ -294,14 +302,15 @@ class kb_RDP_Classifier:
         #####
 
  
-        if _globals.debug and params.get('skip_save_retFiles'):
+        if params.get('skip_save_retFiles'):
             return
 
 
 
         def dir_to_shock(dir_path, name, description):
             '''
-            For regular directories, html directories, or flat files
+            For regular directories, html directories, 
+            or flat files (but those will get enclosing directory zipped)
             
             name - for regular directories: the name of the flat (zip) file returned to ui
                    for html directories: the name of the html file
@@ -318,7 +327,7 @@ class kb_RDP_Classifier:
                 'description': description
                 }
 
-        shockInfo_report = dir_to_shock(hrw.html_flpth, os.path.basename(hrw.html_flpth), 'Report html')
+        shockInfo_report = dir_to_shock(hrw.report_dir, os.path.basename(hrw.html_flpth), 'Report html')
         shockInfo_retFiles = dir_to_shock(_globals.run_dir, 'RDP_classifier_results.zip', 'Input and output files')
 
 
@@ -330,8 +339,9 @@ class kb_RDP_Classifier:
       
         params_report = {
             'warnings': _globals.warnings,
+            'direct_html_link_index': 0,
+            'html_links': [shockInfo_report],
             'file_links': [shockInfo_retFiles],
-            'report_object_name': 'kb_RDP_Classifier_report_' + str(uuid.uuid4()),
             'workspace_name': params['workspace_name'],
             'objects_created': objects_created,
             }

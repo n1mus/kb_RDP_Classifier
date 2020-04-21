@@ -21,7 +21,7 @@ from .config import _globals
 
 class Parser:
 
-    def __init__(self, fixRank_flpth, filterByConf_flpth, conf):
+    def __init__(self, fixRank_flpth, filterByConf_flpth, conf: float):
         self.fixRank_flpth = fixRank_flpth
         self.filterByConf_flpth = filterByConf_flpth
         self.conf = conf
@@ -92,7 +92,7 @@ def do_pie_chart(parser):
     
     fig.update_layout(
         title={
-            'text': 'Assignment Cutoff',
+            'text': 'Assignment Cutoff (bootstrap threshold=%.2f)' % parser.conf,
             'x': 0.25,
         },
         showlegend=False
@@ -163,7 +163,8 @@ def do_sunburst(parser):
 
     fig.update_layout(
         title_text='Taxonomic Assignment',
-        title_x=0.25
+        title_x=0.25,
+        height=1000
     )
 
     return fig.to_html(full_html=False)
@@ -185,25 +186,46 @@ def do_sunburst(parser):
 
 class HTMLReportWriter:
 
-    def __init__(self, fixRank_flpth, filterByConf_flpth, conf):
+    def __init__(self, out_files, params_prose, cmd_l):
+        '''
+        out_files - fixRank, filterByConf
+        params_prose - all str
+        '''
         self.replacement_d = {}
 
-        self.parser = Parser(fixRank_flpth, filterByConf_flpth, conf)
+        self.parser = Parser(out_files[0], out_files[1], float(params_prose['conf']))
+
+        self.params_prose = params_prose
+        self.cmd_l = cmd_l
+
+    def compile_cmd(self):
+        
+        txt = ''
+
+        for cmd in self.cmd_l:
+            txt += '<p><code>' + cmd + '</code></p>\n'
+
+        self.replacement_d['CMD_TAG'] = txt
+
 
     def compile_figures(self):
         txt = ''
 
-        txt += do_sunburst(self.parser)
         txt += do_histogram(self.parser)
         txt += do_pie_chart(self.parser)
+        txt += do_sunburst(self.parser)
 
         self.replacement_d['FIGURES_TAG'] = txt
 
     def write(self):
+        self.compile_cmd()
         self.compile_figures()
 
+        report_dir = os.path.join(_globals.run_dir, 'report')
+        os.mkdir(report_dir)
+        
         REPORT_HTML_TEMPLATE_FLPTH = '/kb/module/ui/output/report.html'
-        html_flpth = os.path.join(_globals.run_dir, 'report.html')
+        html_flpth = os.path.join(report_dir, 'report.html')
 
         with open(REPORT_HTML_TEMPLATE_FLPTH, 'r') as src_fp:
             with open(html_flpth, 'w') as dst_fp:
@@ -213,6 +235,7 @@ class HTMLReportWriter:
                     else:
                         dst_fp.write(line)
         
+        self.report_dir = report_dir
         self.html_flpth = html_flpth
 
 

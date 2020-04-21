@@ -20,7 +20,6 @@ from kb_RDP_Classifier.util.error import *
 
 params_debug = {
     'skip_run': True,
-    'mini_data': True,
     'skip_obj': True,
     #'skip_save_retFiles': True,
     }
@@ -42,7 +41,7 @@ class kb_RDP_ClassifierTest(unittest.TestCase):
         ret = self.serviceImpl.classify(
             self.ctx, {
                 **self.params_ws,
-                #**params_debug,
+                **params_debug,
                 'amplicon_set_upa': enigma_amp_set_upa,
                 'output_name': 'an_output_name',
                 **params_rdp_classifier,

@@ -4,7 +4,7 @@
 name: classify
 
 tooltip: |
-    Perform some kind of method
+    Rapidly assign rRNA sequences to taxonomy with bootstrap confidence using Na&iuml;ve Bayes classifier
 
 screenshots: []
 
@@ -40,19 +40,19 @@ parameters :
             Default is same name, which will save over input object. Enter a different name to avoid saving over
     conf:
         ui-name: |
-            Bootstrap confidence threshold
+            conf
         short-hint : |
             Bootstrap confidence threshold
     gene :
         ui-name : |
-            Gene
+            gene
         short-hint : |
             Gene
     minWords :
         ui-name : |
-            Number of 8-mers from input sequence to randomly select with replacement to calculate bootstrap confidence
+            minWords
         short-hint: |
-            Number of 8-mers from input sequence to randomly select with replacement to calculate bootstrap confidence
+            Number of 8-mers from input sequence to randomly select with replacement to calculate bootstrap confidence. Default is 1/8 the length of the sequence (leave field blank for default behavior)
 
 
 description : |
