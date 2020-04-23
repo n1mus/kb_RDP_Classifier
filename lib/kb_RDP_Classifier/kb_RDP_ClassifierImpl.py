@@ -52,7 +52,7 @@ class kb_RDP_Classifier:
         workspace_url = config['workspace-url']
         shared_folder = config['scratch']
         
-        self._globals = { # shared by all API-method runs
+        self._globals = { # shared by all API-method runs (?)
             'callback_url': callback_url,
             'shared_folder': config['scratch'], 
             'ws': Workspace(workspace_url),
@@ -263,8 +263,8 @@ class kb_RDP_Classifier:
 
             objects_created = [
                 {'ref': row_attr_map_upa_new, 'description': 'Added or updated attribute `%s`' % attribute},
-                {'ref': amp_mat_upa_new, 'description': 'Updated `row_attributemapping_ref`'},
-                {'ref': amp_set_upa_new, 'description': 'Updated `amplicon_matrix_ref`'},
+                {'ref': amp_mat_upa_new, 'description': 'Updated row AttributeMapping reference'},
+                {'ref': amp_set_upa_new, 'description': 'Updated AmpliconMatrix reference'},
             ]
 
 

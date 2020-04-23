@@ -162,7 +162,7 @@ def do_sunburst(parser):
     fig = px.sunburst(df, path=df.columns.tolist())
 
     fig.update_layout(
-        title_text='Taxonomic Assignment',
+        title_text='Taxonomic Assignment (bootstrap threshold=%.2f)' % parser.conf,
         title_x=0.25,
         height=1000
     )
