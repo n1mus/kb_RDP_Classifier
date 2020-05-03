@@ -1,5 +1,3 @@
-#!/home/sumin/anaconda3/bin/python
-
 import plotly.express as px
 import plotly.graph_objects as go
 import pandas as pd
@@ -8,6 +6,8 @@ import sys, os
 import json
 import shutil
 import logging
+import uuid
+import plotly.io as pio
 
 pd.set_option('display.max_rows', 100)
 pd.set_option('display.max_columns', 15)
@@ -17,7 +17,7 @@ pd.set_option('display.max_colwidth', 14)
 
 from .config import _globals
 
-
+DEFAULT_PNG_SHAPE = (500, 700) # plotly's
 
 class Parser:
 
@@ -52,7 +52,7 @@ class Parser:
 ####################################################################################################
 ####################################################################################################
 ####################################################################################################
-def do_pie_chart(parser):
+def do_pie_chart(parser, png_flpth, html_flpth):
 
     logging.info('Generating pie chart')
 
@@ -93,18 +93,19 @@ def do_pie_chart(parser):
     fig.update_layout(
         title={
             'text': 'Assignment Cutoff (bootstrap threshold=%.2f)' % parser.conf,
-            'x': 0.25,
+            'x': 0.5,
         },
         showlegend=False
     )
 
-    return fig.to_html(full_html=False)
+    fig.write_image(png_flpth)
+    fig.write_html(html_flpth)
 
 
 ####################################################################################################
 ####################################################################################################
 ####################################################################################################
-def do_histogram(parser):
+def do_histogram(parser, png_flpth, html_flpth):
 
     logging.info('Generating histogram')
 
@@ -132,26 +133,31 @@ def do_histogram(parser):
 
     fig = go.Figure()
     for conf_col, tax_lvl in zip(conf_cols[::-1], tax_lvls[::-1]):
-        fig.add_trace(go.Histogram(x=df[conf_col].tolist(), name=tax_lvl, histnorm='probability', nbinsx=MAX_BINS))
+        fig.add_trace(go.Histogram(x=df[conf_col].tolist(), name=tax_lvl, histnorm='probability', xbins={'start': 0, 'end': 1, 'size': 0.1}))
 
-    fig.add_trace(go.Histogram(x=conf_all, name='all', histnorm='probability', nbinsx=MAX_BINS, marker_color='black'))
+    fig.add_trace(go.Histogram(x=conf_all, name='pooled', histnorm='probability', nbinsx=MAX_BINS, marker_color='black'))
 
     fig.update_layout(
-        yaxis_title_text='Proportion of Assigned Sequences',
+        yaxis_title_text='Proportion',
         xaxis_title_text='Bootstrap Confidence',
         title_text='Bootstrap Confidence Histogram',
-        title_x=0.25
+        title_x=0.5,
+        xaxis = {
+            'tickmode': 'linear',
+            'tick0': 0,
+            'dtick': 0.1
+            }
     )
 
-    return fig.to_html(full_html=False)
+    fig.write_image(png_flpth, width=int(DEFAULT_PNG_SHAPE[1] * 1.5))
+    fig.write_html(html_flpth)
 
 
 
 ####################################################################################################
 ####################################################################################################
 ####################################################################################################
-def do_sunburst(parser):
-    # TODO include unassigned domain
+def do_sunburst(parser, png_flpth, html_flpth):
     # TODO cut out unassigned branches? - save text/space
 
     logging.info('Generating sunburst')
@@ -163,11 +169,12 @@ def do_sunburst(parser):
 
     fig.update_layout(
         title_text='Taxonomic Assignment (bootstrap threshold=%.2f)' % parser.conf,
-        title_x=0.25,
-        height=1000
+        title_x=0.5,
     )
 
-    return fig.to_html(full_html=False)
+    fig.write_image(png_flpth, width=900, height=900)
+    fig.write_html(html_flpth)#, default_height=1000)
+
 
 
 
@@ -188,17 +195,23 @@ class HTMLReportWriter:
 
     def __init__(self, out_files, params_prose, cmd_l):
         '''
-        out_files - fixRank, filterByConf
+        out_files - [fixRank, filterByConf]
         params_prose - all str
         '''
         self.replacement_d = {}
 
         self.parser = Parser(out_files[0], out_files[1], float(params_prose['conf']))
 
+        #
         self.params_prose = params_prose
         self.cmd_l = cmd_l
 
-    def compile_cmd(self):
+        #
+        self.report_dir = os.path.join(_globals.shared_folder, str(uuid.uuid4()))
+        os.mkdir(self.report_dir)
+
+
+    def _compile_cmd(self):
         
         txt = ''
 
@@ -208,24 +221,44 @@ class HTMLReportWriter:
         self.replacement_d['CMD_TAG'] = txt
 
 
-    def compile_figures(self):
-        txt = ''
+    def _compile_figures(self):
+        #
+        self.fig_dir = os.path.join(self.report_dir, 'fig')
+        os.mkdir(self.fig_dir)
 
-        txt += do_histogram(self.parser)
-        txt += do_pie_chart(self.parser)
-        txt += do_sunburst(self.parser)
+
+        #
+        figname_l = ['histogram', 'pie_chart', 'sunburst']
+        png_flpth_l = [os.path.join(self.fig_dir, figname + '.png') for figname in figname_l]
+        html_flpth_l = [os.path.join(self.report_dir, figname + '_plotly.html') for figname in figname_l]
+
+        figfunc_l = ['do_' + figname for figname in figname_l]
+
+        # call plotly-doing functions
+        for png_flpth, html_flpth, figfunc in zip(png_flpth_l, html_flpth_l, figfunc_l):
+            globals()[figfunc](self.parser, png_flpth, html_flpth)
+
+        def get_relative_fig_path(flpth):
+            return '/'.join(flpth.split('/')[-2:])
+
+        # build replacement string
+        txt = ''
+        for png_flpth, html_flpth in zip(png_flpth_l, html_flpth_l):
+            txt += '<p><a href="%s" target="_blank"><img alt=%s src="%s" title="Click for interactive" style="border:1px solid blue"></a></p>\n' % (
+                os.path.basename(html_flpth),
+                get_relative_fig_path(png_flpth),
+                get_relative_fig_path(png_flpth))
 
         self.replacement_d['FIGURES_TAG'] = txt
 
-    def write(self):
-        self.compile_cmd()
-        self.compile_figures()
 
-        report_dir = os.path.join(_globals.run_dir, 'report')
-        os.mkdir(report_dir)
+    def write(self):
+        self._compile_cmd()
+        self._compile_figures()
+
         
         REPORT_HTML_TEMPLATE_FLPTH = '/kb/module/ui/output/report.html'
-        html_flpth = os.path.join(report_dir, 'report.html')
+        html_flpth = os.path.join(self.report_dir, 'report.html')
 
         with open(REPORT_HTML_TEMPLATE_FLPTH, 'r') as src_fp:
             with open(html_flpth, 'w') as dst_fp:
@@ -235,7 +268,6 @@ class HTMLReportWriter:
                     else:
                         dst_fp.write(line)
         
-        self.report_dir = report_dir
-        self.html_flpth = html_flpth
 
+        return self.report_dir, html_flpth
 

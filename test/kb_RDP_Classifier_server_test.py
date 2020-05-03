@@ -25,7 +25,7 @@ params_debug = {
     }
 
 params_rdp_classifier = {
-    'conf': 0.5,
+    'conf': 0.51,
     'gene': '16srrna',
     'minWords': None,
     }
@@ -41,7 +41,7 @@ class kb_RDP_ClassifierTest(unittest.TestCase):
         ret = self.serviceImpl.classify(
             self.ctx, {
                 **self.params_ws,
-                **params_debug,
+                #**params_debug,
                 'amplicon_set_upa': enigma_amp_set_upa,
                 'output_name': 'an_output_name',
                 **params_rdp_classifier,

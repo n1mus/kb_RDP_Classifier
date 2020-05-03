@@ -77,7 +77,8 @@ class kb_RDP_Classifier:
 
 
 
-        dprint('params', run=locals())
+        dprint('params', run=locals()) # TODO validate `params`
+                                       # TODO ui option to append to name
 
 
         # set up globals ds `_globals` for this API-method run
@@ -283,7 +284,8 @@ class kb_RDP_Classifier:
         hrw = HTMLReportWriter(out_files=[out_fixRank_flpth, out_filterByConf_flpth], 
                             params_prose=params_prose,
                             cmd_l=[cmd_fixRank, cmd_filterByConf])
-        hrw.write()
+
+        report_dir, html_flpth = hrw.write()
 
 
 
@@ -317,7 +319,6 @@ class kb_RDP_Classifier:
             '''
             dfu_fileToShock_ret = _globals.dfu.file_to_shock({
                 'file_path': dir_path,
-                'make_handle': 0,
                 'pack': 'zip',
                 })
 
@@ -327,7 +328,7 @@ class kb_RDP_Classifier:
                 'description': description
                 }
 
-        shockInfo_report = dir_to_shock(hrw.report_dir, os.path.basename(hrw.html_flpth), 'Report html')
+        shockInfo_report = dir_to_shock(report_dir, os.path.basename(html_flpth), 'Report html')
         shockInfo_retFiles = dir_to_shock(_globals.run_dir, 'RDP_classifier_results.zip', 'Input and output files')
 
 
