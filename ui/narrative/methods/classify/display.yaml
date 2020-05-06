@@ -4,7 +4,7 @@
 name: RDP Classifier
 
 tooltip: |
-    Rapidly assign rRNA sequences to taxonomy with bootstrap confidence using Na&iuml;ve Bayes classifier
+    Rapidly assign taxonomy to rRNA with bootstrap confidence using Na&iuml;ve Bayes classifier
 
 screenshots: []
 
@@ -31,7 +31,7 @@ parameters :
             Object of type <code>AmpliconSet</code>
     output_name:
         ui-name: |
-            New name for updated input object (optional)
+            New name for updated input object
         short-hint: |
             Default is same name, which will save over input object. Enter a different name to avoid saving over
         long-hint: |
@@ -59,3 +59,4 @@ description : |
     <p>Curabitur auctor, metus at tristique euismod, odio elit tincidunt neque, a facilisis sem massa convallis dolor. Interdum et malesuada fames ac ante ipsum primis in faucibus. Nunc ut hendrerit tellus. Nunc lacinia laoreet finibus. Etiam vitae sagittis enim. Fusce consectetur porta est eu pretium. In hac habitasse platea dictumst. Integer pellentesque sit amet sapien id venenatis. Nullam ac risus at orci eleifend aliquet. Vestibulum elit purus, euismod a nibh quis, pellentesque semper leo. Curabitur ullamcorper felis hendrerit nunc egestas, sit amet pharetra sapien porttitor. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos. Maecenas hendrerit ipsum a ligula aliquet vestibulum. Duis a ante urna. Aenean ante neque, rhoncus id luctus ut, accumsan vel nunc.</p>
 
     <p>Pellentesque accumsan aliquet magna, id consectetur tellus condimentum eu. Suspendisse elit dui, ornare ac leo eget, tincidunt feugiat orci. Maecenas auctor gravida lacinia. Mauris interdum nisi vel gravida varius. Nullam tempus, purus eget posuere aliquet, odio elit semper massa, quis facilisis massa odio vitae lacus. Fusce varius enim a mi vehicula tempus. Maecenas faucibus tellus ipsum, at venenatis ipsum auctor et. Suspendisse sem mi, dignissim id porta efficitur, auctor eget magna. Vivamus varius purus nulla, porttitor euismod lorem cursus quis. Nulla sit amet eros nec sem ultrices pulvinar.</p>
+

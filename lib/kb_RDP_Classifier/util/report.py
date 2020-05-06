@@ -7,7 +7,6 @@ import json
 import shutil
 import logging
 import uuid
-import plotly.io as pio
 
 pd.set_option('display.max_rows', 100)
 pd.set_option('display.max_columns', 15)
@@ -47,7 +46,7 @@ class Parser:
 
 
 
-
+# TODO make colors for taxa match across graphs
 
 ####################################################################################################
 ####################################################################################################
@@ -242,12 +241,14 @@ class HTMLReportWriter:
             return '/'.join(flpth.split('/')[-2:])
 
         # build replacement string
-        txt = ''
+        txt = '<div id="imgLink">\n'
         for png_flpth, html_flpth in zip(png_flpth_l, html_flpth_l):
-            txt += '<p><a href="%s" target="_blank"><img alt=%s src="%s" title="Click for interactive" style="border:1px solid blue"></a></p>\n' % (
+            txt += '<p><a href="%s" target="_blank"><img alt="%s" src="%s" title="Open to interact"></a></p>\n' % (
                 os.path.basename(html_flpth),
-                get_relative_fig_path(png_flpth),
+                os.path.basename(png_flpth),
                 get_relative_fig_path(png_flpth))
+
+        txt += '</div>\n'
 
         self.replacement_d['FIGURES_TAG'] = txt
 

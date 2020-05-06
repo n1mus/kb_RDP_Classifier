@@ -117,8 +117,9 @@ class AmpliconMatrix:
     def _get_row_attributemapping_ref(self):
         self.row_attr_map_upa = self.obj.get('row_attributemapping_ref')
         if self.row_attr_map_upa == None:
-            raise NoWorkspaceReferenceException(
-                'AmpliconSet\'s associated AmpliconMatrix does not have associated row AttributeMapping to assign traits to.')
+            msg = \
+"AmpliconSet's associated AmpliconMatrix does not have associated row AttributeMapping to assign traits to. Creating new AttributeMapping"
+            _globals.warnings.append(msg)
 
 
     def update_row_attributemapping_ref(self, row_attr_map_upa_new):
@@ -150,11 +151,18 @@ class AttributeMapping:
 
     OBJ_TYPE = "KBaseExperiments.AttributeMapping"
 
-    def __init__(self, upa, mini_data=False):
+    def __init__(self, upa=None, mini_data=False, amp_mat=None):
         self.upa = upa
         self.mini_data = mini_data
 
-        self._get_obj()
+        if upa:
+            self._get_obj()
+        elif upa==None and amp_mat:
+            self._get_obj_new(amp_mat)
+        else:
+            raise Exception()
+
+
 
     def _get_obj(self):
         obj = _globals.dfu.get_objects({
@@ -163,6 +171,22 @@ class AttributeMapping:
 
         self.name = obj['data'][0]['info'][1]
         self.obj = obj['data'][0]['data']
+
+
+    def _get_obj_new(self, amp_mat):
+        
+        id_l = amp_mat.obj['data']['row_ids']
+
+        instances = {id: [] for id in id_l}
+
+        self.obj = {
+            'attributes': [],
+            'instances': instances,
+            'ontology_mapping_method': 'User curated',
+        }
+
+        self.name = amp_mat.name + '.AttributeMapping'
+
 
 
     @staticmethod
@@ -216,21 +240,20 @@ class AttributeMapping:
     def save(self, name=None):
         logging.info('Saving %s' % self.OBJ_TYPE)
 
-        info = _globals.dfu.save_objects({
+        object = {
+            "type": self.OBJ_TYPE,
+            "data": self.obj,
+            "name": name if name else self.name,
+             }
+
+        if self.upa:
+            object["extra_provenance_input_refs"] = [self.upa],
+
+        info = _globals.dfu.save_objects({ # TODO consolidate calls for performance?
             "id": _globals.params['workspace_id'],
-            "objects": [{
-                "type": self.OBJ_TYPE,
-                "data": self.obj,
-                "name": name if name else self.name,
-                "extra_provenance_input_refs": [self.upa],
-             }]})[0]
+            "objects": [object]})[0]
 
         upa_new = "%s/%s/%s" % (info[6], info[0], info[4])
 
         return upa_new
-
-
-       
-
-
 

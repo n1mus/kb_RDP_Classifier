@@ -10,7 +10,7 @@ from kb_RDP_Classifier.kb_RDP_ClassifierImpl import kb_RDP_Classifier
 from kb_RDP_Classifier.kb_RDP_ClassifierServer import MethodContext
 from kb_RDP_Classifier.authclient import KBaseAuth as _KBaseAuth
 
-from kb_RDP_Classifier.util import config # test turn off debug
+from kb_RDP_Classifier.util import config
 from kb_RDP_Classifier.util.config import _globals
 from kb_RDP_Classifier.util.dprint import dprint, where_am_i
 from kb_RDP_Classifier.util.error import *
@@ -19,8 +19,8 @@ from kb_RDP_Classifier.util.error import *
 
 
 params_debug = {
-    'skip_run': True,
-    'skip_obj': True,
+    #'skip_obj': True,
+    #'skip_run': True,
     #'skip_save_retFiles': True,
     }
 
@@ -33,6 +33,7 @@ params_rdp_classifier = {
 
 enigma_amp_set_upa = "48255/26/3"
 enigmaFirst50_amp_set_upa = '48402/6/2'
+secret = '49926/6/1'
 
 
 class kb_RDP_ClassifierTest(unittest.TestCase):
@@ -41,12 +42,25 @@ class kb_RDP_ClassifierTest(unittest.TestCase):
         ret = self.serviceImpl.classify(
             self.ctx, {
                 **self.params_ws,
-                #**params_debug,
-                'amplicon_set_upa': enigma_amp_set_upa,
+                **params_debug,
+                'amplicon_set_upa': secret,
                 'output_name': 'an_output_name',
                 **params_rdp_classifier,
                 }
             )
+
+    def test_no_AttributeMapping(self):
+        pass
+
+    def test_NonZeroReturnException(self):
+        pass
+
+    def test_ArgumentException(self):
+        pass
+
+    def test_large_data(self):
+        pass
+
 
     @classmethod
     def setUpClass(cls):
@@ -90,4 +104,6 @@ class kb_RDP_ClassifierTest(unittest.TestCase):
         if hasattr(cls, 'wsName'):
             cls.wsClient.delete_workspace({'workspace': cls.wsName})
             print('Test workspace was deleted')
+
+        print('!!!' * 40 + "DON'T FORGET TO GRAB HTML(S)" + '!!!' * 40)
 

@@ -78,7 +78,7 @@ class kb_RDP_Classifier:
 
 
         dprint('params', run=locals()) # TODO validate `params`
-                                       # TODO ui option to append to name
+                                       # TODO ui option to append to name?
 
 
         # set up globals ds `_globals` for this API-method run
@@ -116,7 +116,7 @@ class kb_RDP_Classifier:
             amp_mat = AmpliconMatrix(amp_set.amp_mat_upa)
 
             # 
-            row_attr_map = AttributeMapping(amp_mat.row_attr_map_upa)
+            row_attr_map = AttributeMapping(upa=amp_mat.row_attr_map_upa, amp_mat=amp_mat)
 
 
 
@@ -289,8 +289,10 @@ class kb_RDP_Classifier:
 
 
 
-
-
+        html_links = [{
+            'path': report_dir,
+            'name': os.path.basename(html_flpth),
+            }]
 
 
 
@@ -299,7 +301,7 @@ class kb_RDP_Classifier:
 
         #
         ##
-        ### return files
+        ###
         ####
         #####
 
@@ -307,44 +309,19 @@ class kb_RDP_Classifier:
         if params.get('skip_save_retFiles'):
             return
 
+        file_links = [{
+            'path': _globals.run_dir,
+            'name': 'RDP_Classifier_results.zip',
+            'description': 'Input, output'
+            }]
 
-
-        def dir_to_shock(dir_path, name, description):
-            '''
-            For regular directories, html directories, 
-            or flat files (but those will get enclosing directory zipped)
-            
-            name - for regular directories: the name of the flat (zip) file returned to ui
-                   for html directories: the name of the html file
-            '''
-            dfu_fileToShock_ret = _globals.dfu.file_to_shock({
-                'file_path': dir_path,
-                'pack': 'zip',
-                })
-
-            return {
-                'shock_id': dfu_fileToShock_ret['shock_id'],
-                'name': name,
-                'description': description
-                }
-
-        shockInfo_report = dir_to_shock(report_dir, os.path.basename(html_flpth), 'Report html')
-        shockInfo_retFiles = dir_to_shock(_globals.run_dir, 'RDP_classifier_results.zip', 'Input and output files')
-
-
-        #
-        ##
-        ### report
-        ####
-        #####
-      
         params_report = {
             'warnings': _globals.warnings,
-            'direct_html_link_index': 0,
-            'html_links': [shockInfo_report],
-            'file_links': [shockInfo_retFiles],
-            'workspace_name': params['workspace_name'],
             'objects_created': objects_created,
+            'html_links': html_links,
+            'direct_html_link_index': 0,
+            'file_links': file_links,
+            'workspace_name': params['workspace_name'],
             }
 
         report = _globals.kbr.create_extended_report(params_report)
