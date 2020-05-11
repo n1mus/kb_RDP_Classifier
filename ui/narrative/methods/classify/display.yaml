@@ -45,12 +45,26 @@ parameters :
         ui-name : |
             gene
         short-hint : |
-            Gene
+            Gene and training dataset to run against (not yet supported)
     minWords :
         ui-name : |
             minWords
         short-hint: |
             Number of 8-mers from input sequence to randomly select with replacement to calculate bootstrap confidence. Default is 1/8 the length of the sequence (leave field blank for default behavior)
+    write_amplicon_set_taxonomy:
+        ui-name: |
+            Write taxonomy assignments to AmpliconSet?
+        short-hint: |
+            Write taxonomy assignments to AmpliconSet? Either do not write, do not overwrite if any taxonomies for any amplicons have already been written, or overwrite all taxonomies
+            
+    
+
+parameter-groups:
+    rdp_classifier:
+        ui-name: |
+            RDP Classifier Options
+        short-hint: |
+            RDP Classifier Options
 
 
 description : |

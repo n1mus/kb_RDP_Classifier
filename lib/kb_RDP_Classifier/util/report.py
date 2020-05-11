@@ -18,6 +18,8 @@ from .config import _globals
 
 DEFAULT_PNG_SHAPE = (500, 700) # plotly's
 
+# TODO testing graph info
+
 class Parser:
 
     def __init__(self, fixRank_flpth, filterByConf_flpth, conf: float):
@@ -167,12 +169,12 @@ def do_sunburst(parser, png_flpth, html_flpth):
     fig = px.sunburst(df, path=df.columns.tolist())
 
     fig.update_layout(
-        title_text='Taxonomic Assignment (bootstrap threshold=%.2f)' % parser.conf,
+        title_text='Taxonomic Assignment (bootstrap threshold=%.2f)' % parser.conf, # TODO conf should be arg, not in parser
         title_x=0.5,
     )
 
     fig.write_image(png_flpth, width=900, height=900)
-    fig.write_html(html_flpth)#, default_height=1000)
+    fig.write_html(html_flpth)#, default_height=1000) # TODO zoom a little? more color?
 
 
 

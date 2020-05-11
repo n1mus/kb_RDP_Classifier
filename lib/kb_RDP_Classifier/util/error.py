@@ -1,7 +1,5 @@
 """
-Exception library to reduce hardcoding and categorize exceptions
-Useful for testing
-Minimize namespace so can import *
+Exception library to reduce hardcoding and categorize exceptions for testing
 """
 
 
@@ -15,8 +13,6 @@ class NoWorkspaceReferenceException(Exception):
 
 class ArgumentException(Exception):
     pass
-
-
 
 
 

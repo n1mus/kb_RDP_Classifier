@@ -4,10 +4,12 @@ import numpy as np
 import os
 import sys
 import gzip
+import re
 
 from .dprint import dprint
 from .config import _globals
-from .error import *
+from .error import * # *Exception
+from .message import *
 
 
 
@@ -18,7 +20,7 @@ pd.set_option('display.max_colwidth', 20)
 
 
 
-# TODO DRY <-- inheritance
+# TODO inheritance
 
 
 
@@ -66,7 +68,48 @@ class AmpliconSet:
               
         self.fasta_flpth = fasta_flpth
 
+    """
+    def write_taxonomy(self, id2taxStr_d, overwrite):
+        '''
+        If `overwrite`: overwrite
+        If not `overwrite`: only write empty ones
+        '''
+        for id_, amplicon_d in self.obj['amplicons'].items():
+            if len(amplicon_d['taxonomy']) == 0 or overwrite:
+                amplicon_d['taxonomy'] = {
+                    'lineage': [taxon.strip() for taxon in id2taxStr_d[id_].split(';')],
+                    'taxonomy_source': 'rdp',
+                }
 
+        if _globals.debug:        
+            assert self._is_all_assigned_taxonomy()
+    """
+
+
+    def write_taxonomy(self, id2taxStr_d, overwrite):
+        '''
+        If `overwrite`: overwrite
+        If not `overwrite`: only write if all empty 
+        '''
+        if not overwrite:
+            for amplicon_d in self.obj['amplicons'].values():
+                if len(amplicon_d['taxonomy']) > 0:
+                    logging.warning(msg_notOverwriting)
+                    _globals.warnings.append(msg_notOverwriting)
+                    return
+
+        for id_, amplicon_d in self.obj['amplicons'].items():
+            amplicon_d['taxonomy'] = {
+                'lineage': [taxon.strip() for taxon in id2taxStr_d[id_].split(';')],
+                'taxonomy_source': 'rdp',
+            }
+
+        if _globals.debug:        
+            assert self._is_all_assigned_taxonomy()
+
+
+
+        
     def update_amplicon_matrix_ref(self, amp_mat_upa_new):
         self.obj['amplicon_matrix_ref'] = amp_mat_upa_new
 
@@ -81,13 +124,20 @@ class AmpliconSet:
                 "type": self.OBJ_TYPE,
                 "data": self.obj,
                 "name": name if name else self.name,
-                "extra_provenance_input_refs": [self.upa], # TODO remove if AmpliconSet is input?
-             }]})[0]
+                #"extra_provenance_input_refs": [self.upa], # don't need if original version is input
+             }]
+        })[0]
 
         upa_new = "%s/%s/%s" % (info[6], info[0], info[4])
 
         return upa_new
 
+
+    def _is_all_assigned_taxonomy(self):
+        for amplicon_d in self.obj['amplicons'].values():
+            if len(amplicon_d) == 0:
+                return False
+        return True
 
 
 
@@ -115,15 +165,14 @@ class AmpliconMatrix:
         self.obj = obj['data'][0]['data']
 
     def _get_row_attributemapping_ref(self):
-        self.row_attr_map_upa = self.obj.get('row_attributemapping_ref')
-        if self.row_attr_map_upa == None:
-            msg = \
-"AmpliconSet's associated AmpliconMatrix does not have associated row AttributeMapping to assign traits to. Creating new AttributeMapping"
-            _globals.warnings.append(msg)
+        self.row_attrmap_upa = self.obj.get('row_attributemapping_ref')
+        if self.row_attrmap_upa == None:
+            logging.warning(msg_createNewRowAttributeMapping)
+            _globals.warnings.append(msg_createNewRowAttributeMapping)
 
 
-    def update_row_attributemapping_ref(self, row_attr_map_upa_new):
-        self.obj['row_attributemapping_ref'] = row_attr_map_upa_new
+    def update_row_attributemapping_ref(self, row_attrmap_upa_new):
+        self.obj['row_attributemapping_ref'] = row_attrmap_upa_new
 
 
     def save(self, name=None):
@@ -151,14 +200,20 @@ class AttributeMapping:
 
     OBJ_TYPE = "KBaseExperiments.AttributeMapping"
 
-    def __init__(self, upa=None, mini_data=False, amp_mat=None):
+    def __init__(self, upa, amp_mat: AmpliconMatrix, mini_data=False):
+        """
+        Input:
+            amp_mat - required because AttributeMapping ids >= AmpliconMatrix ids (for row or col)
+                      and only a subset of AttributeMapping may be assigned
+        """
         self.upa = upa
+        self.amp_mat = amp_mat
         self.mini_data = mini_data
 
         if upa:
             self._get_obj()
-        elif upa==None and amp_mat:
-            self._get_obj_new(amp_mat)
+        elif upa == None:
+            self._get_obj_new()
         else:
             raise Exception()
 
@@ -173,9 +228,9 @@ class AttributeMapping:
         self.obj = obj['data'][0]['data']
 
 
-    def _get_obj_new(self, amp_mat):
+    def _get_obj_new(self):
         
-        id_l = amp_mat.obj['data']['row_ids']
+        id_l = self.amp_mat.obj['data']['row_ids']
 
         instances = {id: [] for id in id_l}
 
@@ -185,7 +240,7 @@ class AttributeMapping:
             'ontology_mapping_method': 'User curated',
         }
 
-        self.name = amp_mat.name + '.AttributeMapping'
+        self.name = self.amp_mat.name + '.row_AttributeMapping' # TODO length checks
 
 
 
@@ -208,10 +263,13 @@ class AttributeMapping:
                 break
 
         # fill slots in `instances`
-        for id, attr_l in self.obj['instances'].items():
-            attr_l[attr_ind] = id2attr_d.get(id, '')
+        for id_, attr_l in self.obj['instances'].items():
+            attr_l[attr_ind] = id2attr_d.get(id_, '')
 
         self.obj['attributes'][attr_ind]['source'] = source
+
+        if _globals.debug:
+            assert self._is_populated_looks_normal(attribute, source)
 
 
 
@@ -220,8 +278,7 @@ class AttributeMapping:
         # check if already exists
         for attr_d in self.obj['attributes']:
             if attr_d['attribute'] == attribute:
-                msg = 'Adding attribute slot `%s` to AttributeMapping with name `%s`, ' % (attribute, self.name) + \
-                      'but that attribute already exists'
+                msg = msg_attrAlreadyExists % (attribute, self.name) # TODO take out of error.py
                 logging.warning(msg)
                 _globals.warnings.append(msg)
                 return
@@ -236,24 +293,48 @@ class AttributeMapping:
             attr_l.append('')
 
 
-
     def save(self, name=None):
         logging.info('Saving %s' % self.OBJ_TYPE)
 
-        object = {
+        object_ = {
             "type": self.OBJ_TYPE,
             "data": self.obj,
             "name": name if name else self.name,
              }
 
         if self.upa:
-            object["extra_provenance_input_refs"] = [self.upa],
+            object_["extra_provenance_input_refs"] = [self.upa]
 
         info = _globals.dfu.save_objects({ # TODO consolidate calls for performance?
             "id": _globals.params['workspace_id'],
-            "objects": [object]})[0]
+            "objects": [object_]
+            })[0]
 
         upa_new = "%s/%s/%s" % (info[6], info[0], info[4])
 
         return upa_new
+
+
+    def _is_populated_looks_normal(self, attribute, source):
+        """
+        Make sure that attribute is present, and all AmpliconSet id's are assigned for
+        """
+        
+        ind = -1
+        for ind_, attr_d in enumerate(self.obj['attributes']):
+            if attr_d['attribute'] == attribute:
+                ind = ind_
+                assert attr_d['source'] == source
+
+        if ind == -1:
+            return False
+
+        num_attr = len(self.obj['attributes'])
+
+        for id_, instance in self.obj['instances'].items():
+            assert len(instance) == num_attr
+            if id_ in self.amp_mat.obj['data']['row_ids']:
+                assert re.match('(.+;){5}.+', instance[ind]), 'attribute is `' + instance[ind] + '`' # TODO more precise
+
+        return True
 

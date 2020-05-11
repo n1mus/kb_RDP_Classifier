@@ -104,8 +104,8 @@ class kb_RDP_Classifier:
         #####
 
 
-        if params.get('skip_obj'):
-            dprint('Skip loading objects')
+        if _globals.debug and params.get('skip_obj'):
+            dprint('Skip obj - loading objects')
         
         else:
             # input object, which has the amplicons
@@ -115,9 +115,12 @@ class kb_RDP_Classifier:
             # intermediate referenced
             amp_mat = AmpliconMatrix(amp_set.amp_mat_upa)
 
-            # 
-            row_attr_map = AttributeMapping(upa=amp_mat.row_attr_map_upa, amp_mat=amp_mat)
+            # if `row_attrmap_upa` == None, 
+            # create new row AttributeMapping object 
+            # from amp_mat.obj['data']['row_ids']
+            row_attrmap = AttributeMapping(upa=amp_mat.row_attrmap_upa, amp_mat=amp_mat)  
 
+            dprint('params["amplicon_set_upa"]', 'amp_set.amp_mat_upa', 'amp_mat.row_attrmap_upa', run=locals())
 
 
 
@@ -135,16 +138,18 @@ class kb_RDP_Classifier:
             'minWords': None,
         }
 
-        params_prose = { # for printing
-            'conf': '%.2f' % params['conf'] if params['conf'] else defaults['conf'],
-            'gene': params['gene'] if params['gene'] else defaults['gene'],
-            'minWords': str(params['minWords']) if params['minWords'] else 'default'
+        params_rdp = params.get('rdp_classifier', defaults)
+
+        params_rdp_prose = { # for printing
+            'conf': '%.2f' % params_rdp.get('conf', defaults['conf']),
+            'gene': params_rdp.get('gene', defaults['gene']),
+            'minWords': str(params_rdp.get('minWords', 'default')),
         }
 
         cmd_params = []
         for key, value in defaults.items():
-            if params[key] and params[key] != value:
-                cmd_params.append('--' + key + ' ' + str(params[key]))
+            if key in params_rdp and params_rdp[key] != value:
+                cmd_params.append('--' + key + ' ' + str(params_rdp[key]))
 
 
         dprint('cmd_params', run=locals())
@@ -160,7 +165,7 @@ class kb_RDP_Classifier:
         out_fixRank_flpth = os.path.join(_globals.run_dir, 'out_fixRank.tsv')
 
 
-        if params.get('skip_run'):
+        if _globals.debug and params.get('skip_run'):
             dprint('Skipping run')
             dprint(f'cp /kb/module/test/data/* {_globals.run_dir}', run='cli')
 
@@ -170,7 +175,8 @@ class kb_RDP_Classifier:
 
         else:
           
-            cmd_base = 'java -Xmx1g -jar %s classify %s ' % (_globals.classifierJar_flpth, amp_set.fasta_flpth) + ' '.join(cmd_params)
+            cmd_base = 'java -Xmx1g -jar %s classify %s ' % (_globals.classifierJar_flpth, 
+                amp_set.fasta_flpth) + ' '.join(cmd_params)
             
             cmd_fixRank = cmd_base + ' --format filterByConf --outputFile %s' % out_filterByConf_flpth
             cmd_filterByConf = cmd_base + ' --format fixRank --outputFile %s' % out_fixRank_flpth
@@ -186,12 +192,12 @@ class kb_RDP_Classifier:
         #####
 
 
-        if params.get('skip_run'):
-            dprint('Skipping run')
+        if _globals.debug and params.get('skip_run'):
+            logging.debug('Skip run')
 
         else:
 
-            subproc_run = functools.partial(
+            subproc_run = functools.partial( # TODO remove shell
                 subprocess.run, shell=True, executable='/bin/bash', stdout=sys.stdout, stderr=sys.stderr)
 
 
@@ -214,29 +220,41 @@ class kb_RDP_Classifier:
 
         #
         ##
-        ### add taxStr to row AttributeMapping
+        ### add taxStr to AmpliconSet / row AttributeMapping
         ####
         #####
 
-        if params.get('skip_obj'):
-            dprint('Skipping obj')
+        source = 'kb_RDP_Classifier/classify'
+        attribute = 'RDP Classifier Taxonomy, ' + \
+            'conf=%s, gene=%s, minWords=%s' % (
+            params_rdp_prose['conf'], params_rdp_prose['gene'], params_rdp_prose['minWords'])
+
+
+        if _globals.debug and params.get('skip_obj'):
+            logging.debug('Skip obj - add taxStr to AmpliconSet / row AttributeMapping')
 
         else:
 
-            source = 'kb_RDP_Classifier/classify'
-            attribute = 'RDP Classifier Taxonomy, ' + \
-                'conf=%s, gene=%s, minWords=%s' % (
-                params_prose['conf'], params_prose['gene'], params_prose['minWords'])
+            id2taxStr_d = AttributeMapping.parse_filterByConf(out_filterByConf_flpth) # TODO better place for this func
 
-
-            row_attr_map.add_attribute_slot(attribute)
-
-            id2taxStr_d = AttributeMapping.parse_filterByConf(out_filterByConf_flpth)
             dprint('id2taxStr_d', 'len(id2taxStr_d)', run=locals())
-            row_attr_map.update_attribute(id2taxStr_d, attribute, source)
+
+            ##
+            ## AmpliconSet
+
+            write_setting = params.get('write_amplicon_set_taxonomy', 'do_not_overwrite')
+    
+            if write_setting != 'do_not_write':
+                amp_set.write_taxonomy(id2taxStr_d, write_setting=='overwrite')
+
+
+            ##
+            ## row AttributeMapping
+
+            row_attrmap.add_attribute_slot(attribute)
+            row_attrmap.update_attribute(id2taxStr_d, attribute, source)
 
             
-            dprint('row_attr_map.obj["attributes"]', 'row_attr_map.obj["instances"]', run=locals())
 
 
 
@@ -246,24 +264,22 @@ class kb_RDP_Classifier:
         ####
         #####
 
-        if params.get('skip_obj'):
-            dprint('Skipping obj')
+        if _globals.debug and params.get('skip_obj'):
+            dprint('Skip obj')
             objects_created = []
 
         else:
 
-            upa_l = []
+            row_attrmap_upa_new = row_attrmap.save()
 
-            row_attr_map_upa_new = row_attr_map.save()
-
-            amp_mat.update_row_attributemapping_ref(row_attr_map_upa_new)
+            amp_mat.update_row_attributemapping_ref(row_attrmap_upa_new)
             amp_mat_upa_new = amp_mat.save()
 
             amp_set.update_amplicon_matrix_ref(amp_mat_upa_new)
             amp_set_upa_new = amp_set.save(name=params.get('output_name'))
 
             objects_created = [
-                {'ref': row_attr_map_upa_new, 'description': 'Added or updated attribute `%s`' % attribute},
+                {'ref': row_attrmap_upa_new, 'description': 'Added or updated attribute `%s`' % attribute},
                 {'ref': amp_mat_upa_new, 'description': 'Updated row AttributeMapping reference'},
                 {'ref': amp_set_upa_new, 'description': 'Updated AmpliconMatrix reference'},
             ]
@@ -282,7 +298,7 @@ class kb_RDP_Classifier:
 
 
         hrw = HTMLReportWriter(out_files=[out_fixRank_flpth, out_filterByConf_flpth], 
-                            params_prose=params_prose,
+                            params_prose=params_rdp_prose,
                             cmd_l=[cmd_fixRank, cmd_filterByConf])
 
         report_dir, html_flpth = hrw.write()
@@ -305,10 +321,6 @@ class kb_RDP_Classifier:
         ####
         #####
 
- 
-        if params.get('skip_save_retFiles'):
-            return
-
         file_links = [{
             'path': _globals.run_dir,
             'name': 'RDP_Classifier_results.zip',
@@ -324,13 +336,21 @@ class kb_RDP_Classifier:
             'workspace_name': params['workspace_name'],
             }
 
-        report = _globals.kbr.create_extended_report(params_report)
+        if _globals.debug and params.get('return_testingInfo'):
+            return {
+                **params_report,
+                'source': source,
+                'attribute': attribute,
+            }
 
-        output = {
-            'report_name': report['name'],
-            'report_ref': report['ref'],
-        }
-
+        if _globals.debug and params.get('skip_objReport'):
+            output = {}
+        else:
+            report = _globals.kbr.create_extended_report(params_report)
+            output = {
+                'report_name': report['name'],
+                'report_ref': report['ref'],
+            }
 
         #END classify
 

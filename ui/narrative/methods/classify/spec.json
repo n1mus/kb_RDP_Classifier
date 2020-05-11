@@ -9,6 +9,20 @@
         "input": null,
         "output": "no-display"
     },
+    "parameter-groups": [
+        {
+            "id": "rdp_classifier",
+            "parameters": [
+                "conf",
+                "gene",
+                "minWords"
+            ],
+            "optional": true,
+            "advanced": true,
+            "allow_multiple": false,
+            "with_border": true
+        }
+    ],
     "parameters": [ 
         {
             "id": "amplicon_set_upa",
@@ -86,6 +100,27 @@
                 "validate_as": "int",
                 "min_int": 5
             }
+        },{
+            "id": "write_amplicon_set_taxonomy",
+            "optional": true,
+            "advanced": true,
+            "allow-multiple": false,
+            "field_type": "dropdown",
+            "dropdown_options": {
+                "options": [
+                    {
+                        "value": "do_not_write",
+                        "display": "do not write"
+                    },{
+                        "value": "do_not_overwrite",
+                        "display": "do not overwrite"
+                    },{
+                        "value": "overwrite",
+                        "display": "overwrite"
+                    }
+                ]
+            },
+            "default_values": ["do_not_overwrite"]
         }
     ],
     "behavior": {
@@ -108,14 +143,11 @@
                     "input_parameter": "output_name",
                     "target_property": "output_name"
                 },{
-                    "input_parameter": "conf",
-                    "target_property": "conf"
+                    "input_parameter": "rdp_classifier",
+                    "target_property": "rdp_classifier"
                 },{
-                    "input_parameter": "gene",
-                    "target_property": "gene"
-                },{
-                    "input_parameter": "minWords",
-                    "target_property": "minWords"
+                    "input_parameter": "write_amplicon_set_taxonomy",
+                    "target_property": "write_amplicon_set_taxonomy"
                 }
             ],
             "output_mapping": [
