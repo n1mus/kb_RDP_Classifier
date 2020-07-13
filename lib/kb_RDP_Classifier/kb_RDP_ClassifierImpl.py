@@ -35,8 +35,8 @@ class kb_RDP_Classifier:
     # the latter method is running.
     ######################################### noqa
     VERSION = "0.0.1"
-    GIT_URL = ""
-    GIT_COMMIT_HASH = ""
+    GIT_URL = "https://github.com/kbaseapps/kb_rdp_classifier"
+    GIT_COMMIT_HASH = "c4b663e59f21843028649b3af948249da378808b"
 
     #BEGIN_CLASS_HEADER
     #END_CLASS_HEADER
