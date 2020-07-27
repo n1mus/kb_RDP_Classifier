@@ -338,10 +338,10 @@ class Application(object):
         self.serverlog.set_log_level(6)
         self.rpc_service = JSONRPCServiceCustom()
         self.method_authentication = dict()
-        self.rpc_service.add(impl_kb_RDP_Classifier.classify,
-                             name='kb_RDP_Classifier.classify',
+        self.rpc_service.add(impl_kb_RDP_Classifier.run_classify,
+                             name='kb_RDP_Classifier.run_classify',
                              types=[dict])
-        self.method_authentication['kb_RDP_Classifier.classify'] = 'required'  # noqa
+        self.method_authentication['kb_RDP_Classifier.run_classify'] = 'required'  # noqa
         self.rpc_service.add(impl_kb_RDP_Classifier.status,
                              name='kb_RDP_Classifier.status',
                              types=[dict])

@@ -2,7 +2,10 @@
 import os
 import time
 import unittest
+from unittest.mock import patch
 from configparser import ConfigParser
+import json
+import uuid
 
 from installed_clients.WorkspaceClient import Workspace
 
@@ -10,31 +13,40 @@ from kb_RDP_Classifier.kb_RDP_ClassifierImpl import kb_RDP_Classifier
 from kb_RDP_Classifier.kb_RDP_ClassifierServer import MethodContext
 from kb_RDP_Classifier.authclient import KBaseAuth as _KBaseAuth
 
-from kb_RDP_Classifier.util import config
-from kb_RDP_Classifier.util.config import _globals
+from kb_RDP_Classifier.util.config import Var
+from kb_RDP_Classifier.util.params import flatten, Params
+from kb_RDP_Classifier.util.kbase_obj import AmpliconSet, AmpliconMatrix, AttributeMapping
 from kb_RDP_Classifier.util.dprint import dprint, where_am_i
-from kb_RDP_Classifier.util.error import *
+from kb_RDP_Classifier.util.error import * # exceptions and error/warning msgs
+from kb_RDP_Classifier.kb_RDP_ClassifierImpl import run_check, parse_filterByConf
+from mocks import * # upas, mocks ...
+
+######################################
+######################################
+######### TOGGLE PATCH ###############
+######################################
+###################################### 
+do_patch = False # toggle patching for tests that can run independent of it
+
+if do_patch:
+    patch_ = patch
+    patch_dict_ = patch.dict
+
+else:
+    patch_ = lambda *a, **kwargs: lambda f: f
+    patch_dict_ = lambda *a, **kwargs: lambda f: f
+######################################
+######################################
+######################################
+######################################
 
 
-
-
-params_debug = {
-    'skip_obj': True,
-    'skip_run': True,
-    'return_testingInfo': True,
-    'skip_objReport': True,
-    }
-
-params_rdp_classifier = {
+params_rdp_clsf = {
     'conf': 0.51,
     'gene': '16srrna',
     'minWords': None,
-    }
+}
 
-
-full17770 = "48255/26/3"
-first50 = '48402/6/2'
-secret_amp_set_upa = '49926/6/1' # no taxonomy or AttributeMappings
 
 
 class kb_RDP_ClassifierTest(unittest.TestCase):
@@ -42,100 +54,422 @@ class kb_RDP_ClassifierTest(unittest.TestCase):
     Tests to run will be filtered by code block following class definition
     '''
 
+####################################################################################################
+############################# UNIT TESTS ###########################################################
+####################################################################################################
+
+    ####################
+    ####################
+    def test_run_check(self):
+        '''
+        Test `run_check` which runs executable
+        ''' 
+
+        with self.assertRaises(NonZeroReturnException) as cm:
+            run_check('set -o pipefail && ;s |& tee tmp')
+            self.assertTrue('`2`') in str(cm.exception) # return code 2
+
+        with self.assertRaises(NonZeroReturnException) as cm:
+            run_check('set -o pipefail && tmp |& tee tmp')
+            self.assertTrue('`127`') in str(cm.exception) # return code 127
+
+        with self.assertRaises(NonZeroReturnException) as cm:
+            run_check('set -o pipefail && echo hi |& tmp')
+            self.assertTrue('`127`') in str(cm.exception) # return code 127
+
+        run_check('set -o pipefail && echo hi |& tee tmp') # run correctly
+
+
+    ####################
+    ####################
+    def test_parse_filterByConf(self):
+        filterByConf_flpth = os.path.join(
+            testData_dir, 'by_dataset_input/dummy_10by8/return/RDP_Classifier_output/out_filterByConf.tsv') 
+        id2taxStr_d = parse_filterByConf(filterByConf_flpth)
+
+        self.assertTrue(len(id2taxStr_d) == 10)
+        self.assertTrue(all(['amplicon_id_%d' % i in id2taxStr_d for i in range(10)]))
+        self.assertTrue(all([taxStr.count(';') == 6 for taxStr in id2taxStr_d.values()]))
+
+        self.assertTrue(id2taxStr_d['amplicon_id_0'] == 
+            'Bacteria;"Proteobacteria";Alphaproteobacteria;Rhizobiales;unclassified_Rhizobiales;unclassified_Rhizobiales;')
+        self.assertTrue(id2taxStr_d['amplicon_id_9'] == 
+            'Bacteria;"Proteobacteria";Gammaproteobacteria;Legionellales;Coxiellaceae;Aquicella;')
+
+
+    ####################
+    ####################
+    def test_params(self):
+        # TODO parameter validator
+
+        ##
+        ## test `flatten`
+
+        d = {
+            'key0': 'hat',
+            'key1': 'bat',
+            'nest0': {
+                'key2': 'cat',
+                'key3': 'sat',
+            },
+            'key4': 'chat',
+            'nest1': {
+                'key5': 'gnat',
+            },
+            'key6': 'mat',
+        }
+
+        flatd = flatten(d)
+
+        self.assertTrue(len(flatd) == 7)
+        self.assertTrue(all(['key%d' % i in flatd for i in range(7)]))
+        self.assertTrue(all(['nest%d' % i not in flatd for i in range(2)]))
+        self.assertTrue(flatd['key5'] == 'gnat')
+
+        ##
+        ## test `Params`, all optionals present
+
+        params_ = {
+            'amplicon_set_upa': 'a/b/c',
+            'output_name': None,
+            'rdp_clsf': {
+                'conf': 0.999,
+                'gene': '16srrna',
+                'minWords': None,
+            },
+            'write_ampset_taxonomy': 'overwrite',
+        }
+
+        params = Params(params_)
+
+        self.assertTrue(params.clsf_with_trained is False)
+        self.assertTrue(
+            params.rdp_prose == {
+                'conf': '0.999',
+                'gene': '16srrna',
+                'minWords': 'default'
+            },
+            json.dumps(params.rdp_prose, indent=4)
+        )
+        self.assertTrue(params.cli_args == ['--conf', '0.999'])
+        self.assertTrue('gene' in params)
+        self.assertTrue(not 'GENE' in params)
+        self.assertTrue(params['gene'] == '16srrna')
+        self.assertTrue(params.get('gene') == '16srrna')
+        self.assertTrue(params.get('GENE') is None)
+        str(params) # should not throw
+
+        # TODO test missing optional params
+
+
+    ####################
+    ####################
+    @patch.dict('kb_RDP_Classifier.util.kbase_obj.Var', values={'dfu': get_mock_dfu('dummy_10by8'), 'warnings': []})
+    def test_AmpliconSet(self):
+        Var.run_dir = os.path.join(self.scratch, 'test_AmpliconSet_' + str(uuid.uuid4()))
+        os.mkdir(Var.run_dir)
+
+        ampset = AmpliconSet(dummy_10by8)
+        
+        ##
+        ## test `to_fasta`
+
+        fasta_flpth_test = os.path.join(Var.run_dir, 'study_seqs.fna')
+        fasta_flpth_ref = os.path.join(testData_dir, 'by_dataset_input/dummy_10by8/return/study_seqs.fna')
+        
+        ampset.to_fasta(fasta_flpth_test)
+        
+        with open(fasta_flpth_test) as fh_test, open(fasta_flpth_ref) as fh_ref:
+            self.assertTrue(fh_test.read().strip() == fh_ref.read().strip())
+
+        ##
+        ## test `write_taxonomy`
+
+        filterByConf_flpth = os.path.join(
+            testData_dir, 'by_dataset_input/dummy_10by8/return/RDP_Classifier_output/out_filterByConf.tsv') 
+        id2taxStr_d = parse_filterByConf(filterByConf_flpth)
+
+        # normal write
+        ampset = AmpliconSet(dummy_10by8)
+        ampset.write_taxonomy(id2taxStr_d, overwrite=False)
+        self.assertTrue(Var.warnings == [])
+
+        # normal write
+        ampset = AmpliconSet(dummy_10by8)
+        ampset.write_taxonomy(id2taxStr_d, overwrite=True)
+        self.assertTrue(Var.warnings == [])
+
+        # overwrite
+        ampset = AmpliconSet(dummy_10by8)
+        ampset.write_taxonomy(id2taxStr_d, overwrite=True)
+        ampset.write_taxonomy(id2taxStr_d, overwrite=True)
+        self.assertTrue(len(Var.warnings) == 1)
+        self.assertTrue('`overwrite`' in Var.warnings[-1])
+ 
+        # do not overwrite
+        ampset = AmpliconSet(dummy_10by8)
+        ampset.write_taxonomy(id2taxStr_d, overwrite=False)
+        ampset.write_taxonomy(id2taxStr_d, overwrite=False)
+        self.assertTrue(len(Var.warnings) == 2)
+        self.assertTrue('`do_not_overwrite`' in Var.warnings[-1])
+ 
+        # do not overwrite
+        ampset = AmpliconSet(dummy_10by8)
+        ampset.obj['amplicons']['amplicon_id_0']['taxonomy'] = {'fake': 'dummy'} 
+        ampset.write_taxonomy(id2taxStr_d, overwrite=False)
+        self.assertTrue(len(Var.warnings) == 3)
+        self.assertTrue('`do_not_overwrite`' in Var.warnings[-1])
+ 
+
+
+    ####################
+    ####################
+    @patch.dict('kb_RDP_Classifier.util.kbase_obj.Var', values={'dfu': get_mock_dfu('dummy_10by8'), 'warnings': []})
+    def test_AmpliconMatrix_wRowAttrMap_AttributeMapping(self):
+
+        amp_mat = AmpliconMatrix(dummy_10by8_AmpMat_wRowAttrMap)
+        self.assertTrue(len(Var.warnings) == 0)
+
+        attr_map = AttributeMapping(amp_mat.row_attrmap_upa, amp_mat)
+
+        ##
+        ## write new attribute/source
+        ind_0 = attr_map.get_attribute_slot('biome', 'testing')
+        self.assertTrue(ind_0 == 2)
+        self.assertTrue(len(Var.warnings) == 0)
+
+        attr_map.update_attribute(ind_0, {
+            "amplicon_id_0": "dummy0",
+            "amplicon_id_1": "dummy0",
+            "amplicon_id_2": "dummy0",
+            "amplicon_id_3": "dummy0",
+            "amplicon_id_4": "dummy0",
+            "amplicon_id_5": "dummy0",
+            "amplicon_id_6": "dummy0",
+            "amplicon_id_7": "dummy0",
+            "amplicon_id_8": "dummy0",
+            "amplicon_id_9": "dummy0"
+        })
+
+        self.assertTrue(attr_map.obj['instances']['amplicon_id_4'][ind_0] == 'dummy0')
+
+        ##
+        ## overwrite attribute/source
+        ind_1 = attr_map.get_attribute_slot('celestial body', 'upload')
+        self.assertTrue(ind_1 == 0)
+        self.assertTrue(len(Var.warnings) == 1)
+
+        attr_map.update_attribute(ind_1, {
+            "amplicon_id_0": "dummy1",
+            "amplicon_id_1": "dummy1",
+            "amplicon_id_2": "dummy1",
+            "amplicon_id_3": "dummy1",
+            "amplicon_id_4": "dummy1",
+            "amplicon_id_5": "dummy1",
+            "amplicon_id_6": "dummy1",
+            "amplicon_id_7": "dummy1",
+            "amplicon_id_8": "dummy1",
+            "amplicon_id_9": "dummy1"
+        })
+
+        ##
+        ## all same length
+        num_attr = len(attr_map.obj['attributes'])
+        for attr_l in attr_map.obj['instances'].values():
+            self.assertTrue(len(attr_l) == num_attr)
+
+        ## 
+        ## check did not add dummy attribute to wrong slot
+        ind_lftvr = list(set(range(num_attr)) - {ind_0, ind_1})
+
+        for attr_l in attr_map.obj['instances']:
+            for ind in ind_lftvr:
+                self.assertTrue('dummy' not in attr_l[ind])
+
+ 
+    ####################
+    ####################
+    @patch.dict('kb_RDP_Classifier.util.kbase_obj.Var', values={'dfu': get_mock_dfu('dummy_10by8'), 'warnings': []})
+    def test_AmpliconMatrix_noRowAttrMap_AttributeMapping(self):
+
+        amp_mat = AmpliconMatrix(dummy_10by8_AmpMat_noRowAttrMap)
+        self.assertTrue(len(Var.warnings) == 1)
+
+        # create new AttributeMapping obj
+        attr_map = AttributeMapping(amp_mat.row_attrmap_upa, amp_mat)
+
+        ##
+        ## write new attribute/source
+        ind_0 = attr_map.get_attribute_slot('biome', 'testing')
+        self.assertTrue(ind_0 == 0)
+        self.assertTrue(len(Var.warnings) == 1)
+
+        attr_map.update_attribute(ind_0, {
+            "amplicon_id_0": "dummy0",
+            "amplicon_id_1": "dummy0",
+            "amplicon_id_2": "dummy0",
+            "amplicon_id_3": "dummy0",
+            "amplicon_id_4": "dummy0",
+            "amplicon_id_5": "dummy0",
+            "amplicon_id_6": "dummy0",
+            "amplicon_id_7": "dummy0",
+            "amplicon_id_8": "dummy0",
+            "amplicon_id_9": "dummy0"
+        })
+
+        self.assertTrue(attr_map.obj['instances']['amplicon_id_4'][ind_0] == 'dummy0')
+
+        ##
+        ## all same length
+        num_attr = len(attr_map.obj['attributes'])
+        for attr_l in attr_map.obj['instances'].values():
+            self.assertTrue(len(attr_l) == num_attr)
+
+
+    ####################
+    ####################
+    def test_assert(self):
+        '''Test that asserts have not been compiled out'''
+        with self.assertRaises(AssertionError):
+            assert False
+
+####################################################################################################
+##################################### integration tests ############################################
+####################################################################################################
+
+    ####################
+    ####################
+    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.DataFileUtil', new=lambda u: get_mock_dfu('17770'))
+    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.run_check', new=get_mock_run_check('17770'))
+    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.KBaseReport', new=lambda u: get_mock_kbr())
     def test(self):
-        ret = self.serviceImpl.classify(
+        ret = self.serviceImpl.run_classify(
             self.ctx, {
                 **self.params_ws,
-                'amplicon_set_upa': secret_amp_set_upa,
-                'rdp_classifier': params_rdp_classifier,
-                **params_debug,
-            })
+                'amplicon_set_upa': _17770,
+                'rdp_clsf': params_rdp_clsf,
+            })     
 
-####################################################################################################
-####################################################################################################
-       
+
+    ####################
+    ####################
+    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.DataFileUtil', new=lambda *a: get_mock_dfu('17770'))
+    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.run_check', new=get_mock_run_check('17770'))
+    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.KBaseReport', new=lambda *a: get_mock_kbr())
     def test_default_params(self):
-        ret = self.serviceImpl.classify(
+        ret = self.serviceImpl.run_classify(
             self.ctx, {
                 **self.params_ws,
-                'amplicon_set_upa': first50,
+                'amplicon_set_upa': _17770,
             })
 
-    def test_non_default_params(self):
-        ret = self.serviceImpl.classify(
+        params0 = Var.params
+
+        ret = self.serviceImpl.run_classify(
             self.ctx, {
                 **self.params_ws,
-                'amplicon_set_upa': first50,
+                'amplicon_set_upa': _17770,
+                'output_name': None,
+                'rdp_clsf': {
+                    'conf': 0.80,
+                    'gene': '16srrna',
+                    'minWords': None,
+                },
+                'write_ampset_taxonomy': 'do_not_overwrite',
+            })
+
+        params1 = Var.params
+
+        self.assertTrue(params0.rdp_prose == params1.rdp_prose)
+        self.assertTrue(params0.cli_args == params1.cli_args)
+
+
+    ####################
+    ####################
+    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.DataFileUtil', new=lambda *a: get_mock_dfu('17770'))
+    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.run_check', new=get_mock_run_check('17770'))
+    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.KBaseReport', new=lambda *a: get_mock_kbr())
+    def test_non_default_params(self):
+        ret = self.serviceImpl.run_classify(
+            self.ctx, {
+                **self.params_ws,
+                'amplicon_set_upa': _17770,
                 'output_name': 'an_output_name',
-                'rdp_classifier': {
+                'rdp_clsf': {
                     'conf': 0.222222222,
                     'gene': 'fungallsu',
                     'minWords': 5,
-                    },
-                'write_amplicon_set_taxonomy': 'overwrite',
-                #-----------------------------------
-                'return_testingInfo': True,
+                },
+                'write_ampset_taxonomy': 'overwrite',
             })
 
-    def test_params_validator(self):
-        # TODO call a few times with invalid, assert ArgumentException or ValueError?
-        pass
 
-####################################################################################################
-####################################################################################################
-    '''
-    Test behavior when no taxonomy uploaded or row AttributeMapping
-    '''
-
-
+    ####################
+    ####################
+    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.DataFileUtil', new=lambda *a: get_mock_dfu('secret'))
+    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.KBaseReport', new=lambda *a: get_mock_kbr())
     def test_no_taxonomy_or_AttributeMapping_doNotWrite(self):
-        ret = self.serviceImpl.classify(
+        ret = self.serviceImpl.run_classify(
             self.ctx, {
                 **self.params_ws,
-                'amplicon_set_upa': secret_amp_set_upa,
-                'write_amplicon_set_taxonomy': 'do_not_write',
-                #-----------------------------------
-                'return_testingInfo': True,
+                'amplicon_set_upa': secret,
+                'write_ampset_taxonomy': 'do_not_write',
             })
 
+    ####################
+    ####################
+    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.DataFileUtil', new=lambda *a: get_mock_dfu('secret'))
+    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.KBaseReport', new=lambda *a: get_mock_kbr())
     def test_no_taxonomy_or_AttributeMapping_doNotOverwrite(self):
-        ret = self.serviceImpl.classify(
+        ret = self.serviceImpl.run_classify(
             self.ctx, {
                 **self.params_ws,
-                'amplicon_set_upa': secret_amp_set_upa,
-                'write_amplicon_set_taxonomy': 'do_not_overwrite',
-                #-----------------------------------
-                'return_testingInfo': True,
+                'amplicon_set_upa': secret,
+                'write_ampset_taxonomy': 'do_not_overwrite',
             })
         
+    ####################
+    ####################
+    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.DataFileUtil', new=lambda *a: get_mock_dfu('secret'))
+    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.KBaseReport', new=lambda *a: get_mock_kbr())
     def test_no_taxonomy_or_AttributeMapping_overwrite(self):
-        ret = self.serviceImpl.classify(
+        ret = self.serviceImpl.run_classify(
             self.ctx, {
                 **self.params_ws,
-                'amplicon_set_upa': secret_amp_set_upa,
-                'write_amplicon_set_taxonomy': 'overwrite',
-                #-----------------------------------
-                'return_testingInfo': True,
+                'amplicon_set_upa': secret,
+                'write_ampset_taxonomy': 'overwrite',
             })
         
-####################################################################################################
-    def test_attribute_already_exists(self):
-        pass
+
 
 ####################################################################################################
-    def test_large_data(self):
-        pass
-
-####################################################################################################
-    def test_NonZeroReturnException(self):
-        pass
-
-    def test_ArgumentException(self):
-        pass
-
-
+################## Test against custom trainset ####################################################
 ####################################################################################################
    
+    ####################
+    ####################
+    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.DataFileUtil', new=lambda *a: get_mock_dfu('17770'))
+    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.run_check', new=get_mock_run_check('17770'))
+    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.KBaseReport', new=lambda *a: get_mock_kbr())
+    @unittest.skip('Not implemented')
+    def test_SILVA138SSUNR99(self):
+        ret = self.serviceImpl.run_classify(self.ctx, {
+            **self.params_ws,
+            'amplicon_set_upa': _17770,
+            'rdp_clsf': {
+                'gene': 'SILVA_138_SSU_NR_99',
+            },
+            'write_ampset_taxonomy': 'overwrite'
+        })
+
+#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
 
     @classmethod
     def setUpClass(cls):
@@ -169,7 +503,7 @@ class kb_RDP_ClassifierTest(unittest.TestCase):
         cls.params_ws = {                                                                           
             'workspace_id': cls.wsId,                                                               
             'workspace_name': cls.wsName,                                                           
-            } 
+        } 
         cls.serviceImpl = kb_RDP_Classifier(cls.cfg)
         cls.scratch = cls.cfg['scratch']
         cls.callback_url = os.environ['SDK_CALLBACK_URL']
@@ -179,16 +513,38 @@ class kb_RDP_ClassifierTest(unittest.TestCase):
         if hasattr(cls, 'wsName'):
             cls.wsClient.delete_workspace({'workspace': cls.wsName})
             print('Test workspace was deleted')
-        test_names = [key for key, value in cls.__dict__.items() if type(key) == str and key.startswith('test') and callable(value)]
-        print('All tests:', test_names)
+        tests = [key for key, value in cls.__dict__.items() if type(key) == str and key.startswith('test') and callable(value)]
+        print('Tests ran:', tests)
+        print('Tests skipped:', list(set(all_tests) - set(tests)))
+        print('do_patch:', do_patch)
         dec = '!!!' * 100
         print(dec,  "DO NOT FORGET TO GRAB HTML(S)", dec)
 
+    @staticmethod
+    def subproc_run(cmd):
+        logging.info('Running cmd: `%s`' % cmd)
+        subprocess.run(cmd, shell=True, executable='/bin/bash', stdout=sys.stdout, stderr=sys.stderr)
 
-############################ filter what to run ####################################################
-run_tests = ['test_default_params']
+    def shortDescription(self):
+        '''Override unittest using test*() docstrings in lieu of test*() method name in output summary'''
+        return None
+
+#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#!!!!!!!!!!!!!!!!!!!!!!!!!!! filter what to run !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+all_tests = []
+unit_tests = [
+    'test_assert',
+    'test_run_check', 'test_parse_filterByConf', 'test_params', 
+    'test_AmpliconSet', 'test_AmpliconMatrix_noRowAttrMap_AttributeMapping', 'test_AmpliconMatrix_wRowAttrMap_AttributeMapping',
+]
+run_tests = ['test_AmpliconSet']
 
 for key, value in kb_RDP_ClassifierTest.__dict__.copy().items():
     if type(key) == str and key.startswith('test') and callable(value):
+        all_tests.append(key)
         if key not in run_tests:
-            delattr(kb_RDP_ClassifierTest, key)
+            #delattr(kb_RDP_ClassifierTest, key)
+            pass

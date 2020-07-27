@@ -11,7 +11,7 @@
     },
     "parameter-groups": [
         {
-            "id": "rdp_classifier",
+            "id": "rdp_clsf",
             "parameters": [
                 "conf",
                 "gene",
@@ -39,7 +39,7 @@
             "optional": true,
             "advanced": true,
             "allow_multiple": false,
-            "default_values": [ "" ],
+            "default_values": [ null ],
             "field_type": "text",
             "text_options": {
                 "valid_ws_type": ["KBaseExperiments.AmpliconSet", "KBaseMatrices.AmpliconMatrix"],
@@ -70,22 +70,22 @@
                         "value": "16srrna",
                         "display": "16srrna",
                         "id": "16srrna",
-                        "ui-name": "16srrna"
+                        "ui-name": "RDP 16srrna"
                      },{
                         "value": "fungallsu",
                         "display": "fungallsu",
                         "id": "fungallsu",
-                        "ui-name": "fungallsu"
+                        "ui-name": "RDP fungallsu"
                     },{
                         "value": "fungalits_warcup",
                         "display": "fungalits_warcup",
                         "id": "fungalits_warcup",
-                        "ui-name": "fungalits_warcup"
+                        "ui-name": "RDP fungalits_warcup"
                     },{
                         "value": "fungalits_unite",
                         "display": "fungalits_unite",
                         "id": "fungalits_unite",
-                        "ui-name": "fungalits_unite"
+                        "ui-name": "RDP fungalits_unite"
                     }
                 ]
             }
@@ -95,13 +95,13 @@
             "advanced": true,
             "allow_multiple": false,
             "field_type": "text",
-            "default_values": [ "" ],
+            "default_values": [ null ],
             "text_options": {
                 "validate_as": "int",
                 "min_int": 5
             }
         },{
-            "id": "write_amplicon_set_taxonomy",
+            "id": "write_ampset_taxonomy",
             "optional": true,
             "advanced": true,
             "allow-multiple": false,
@@ -127,7 +127,7 @@
         "service-mapping": {
             "url": "",
             "name": "kb_RDP_Classifier",
-            "method": "classify",
+            "method": "run_classify",
             "input_mapping": [
                 {
                     "narrative_system_variable": "workspace",
@@ -143,11 +143,11 @@
                     "input_parameter": "output_name",
                     "target_property": "output_name"
                 },{
-                    "input_parameter": "rdp_classifier",
-                    "target_property": "rdp_classifier"
+                    "input_parameter": "rdp_clsf",
+                    "target_property": "rdp_clsf"
                 },{
-                    "input_parameter": "write_amplicon_set_taxonomy",
-                    "target_property": "write_amplicon_set_taxonomy"
+                    "input_parameter": "write_ampset_taxonomy",
+                    "target_property": "write_ampset_taxonomy"
                 }
             ],
             "output_mapping": [

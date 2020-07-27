@@ -19,6 +19,7 @@ rm rdp_classifier.zip
 
 RUN pip install pandas dotmap plotly
 
+# for plotly-orca
 RUN apt-get install --yes gcc
 RUN apt-get install --yes libgtk2.0-0
 RUN apt-get install --yes xvfb

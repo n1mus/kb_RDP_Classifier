@@ -7,10 +7,8 @@ import gzip
 import re
 
 from .dprint import dprint
-from .config import _globals
-from .error import * # *Exception
-from .message import *
-
+from .config import Var
+from .error import * # exceptions and msgs
 
 
 pd.set_option('display.max_rows', 100)
@@ -32,9 +30,8 @@ class AmpliconSet:
 
     OBJ_TYPE = "KBaseExperiments.AmpliconSet"
 
-    def __init__(self, upa, mini_data=False):
+    def __init__(self, upa):
         self.upa = upa
-        self.mini_data = mini_data
 
         self._get_obj()
 
@@ -42,7 +39,7 @@ class AmpliconSet:
     def _get_obj(self):
         logging.info('Loading object data for %s' % self.upa)
 
-        obj = _globals.dfu.get_objects({
+        obj = Var.dfu.get_objects({
             'object_refs': [self.upa]
             })
         
@@ -51,39 +48,16 @@ class AmpliconSet:
         self.amp_mat_upa = self.obj['amplicon_matrix_ref']
 
 
-    def to_fasta(self, fasta_flnm='study_seqs.fna'):
-        fasta_flpth = os.path.join(_globals.run_dir, fasta_flnm)
+    def to_fasta(self, fasta_flpth):
         
         logging.info(f'Writing fasta to {fasta_flpth}')
 
         amplicon_d = self.obj['amplicons']
         
-        with open(fasta_flpth, 'w') as fp:
+        with open(fasta_flpth, 'w') as fh:
             for i, (id, d) in enumerate(amplicon_d.items()):
-                fp.write('>' + id + '\n')
-                fp.write(d['consensus_sequence'] + '\n')
-
-                if _globals.debug and self.mini_data and i > 20:
-                    break
-              
-        self.fasta_flpth = fasta_flpth
-
-    """
-    def write_taxonomy(self, id2taxStr_d, overwrite):
-        '''
-        If `overwrite`: overwrite
-        If not `overwrite`: only write empty ones
-        '''
-        for id_, amplicon_d in self.obj['amplicons'].items():
-            if len(amplicon_d['taxonomy']) == 0 or overwrite:
-                amplicon_d['taxonomy'] = {
-                    'lineage': [taxon.strip() for taxon in id2taxStr_d[id_].split(';')],
-                    'taxonomy_source': 'rdp',
-                }
-
-        if _globals.debug:        
-            assert self._is_all_assigned_taxonomy()
-    """
+                fh.write('>' + id + '\n')
+                fh.write(d['consensus_sequence'] + '\n')
 
 
     def write_taxonomy(self, id2taxStr_d, overwrite):
@@ -91,22 +65,40 @@ class AmpliconSet:
         If `overwrite`: overwrite
         If not `overwrite`: only write if all empty 
         '''
-        if not overwrite:
-            for amplicon_d in self.obj['amplicons'].values():
-                if len(amplicon_d['taxonomy']) > 0:
-                    logging.warning(msg_notOverwriting)
-                    _globals.warnings.append(msg_notOverwriting)
-                    return
+        empty_tax = True
+        for amplicon_d in self.obj['amplicons'].values():
+            if len(amplicon_d['taxonomy']) > 0:
+                empty_tax = False
+                break
 
-        for id_, amplicon_d in self.obj['amplicons'].items():
+        if not empty_tax:
+            if overwrite:
+                msg = (
+                    'Input AmpliconSet with name %s has non-empty taxonomy fields. '
+                    'Overwriting since `overwrite` was selected'
+                    % self.name
+                )
+                logging.warning(msg)
+                Var.warnings.append(msg)
+            else:
+                msg = (
+                    'Input AmpliconSet with name %s has non-empty taxonomy fields. '
+                    'Not overwriting since `do_not_overwrite` was selected'
+                    % self.name
+                )
+                logging.warning(msg)
+                Var.warnings.append(msg)
+                return
+
+ 
+        for id, amplicon_d in self.obj['amplicons'].items():
             amplicon_d['taxonomy'] = {
-                'lineage': [taxon.strip() for taxon in id2taxStr_d[id_].split(';')],
+                'lineage': [taxname for taxname in id2taxStr_d[id].split(';') if len(taxname) > 0],
                 'taxonomy_source': 'rdp',
             }
 
-        if _globals.debug:        
+        if Var.debug:        
             assert self._is_all_assigned_taxonomy()
-
 
 
         
@@ -118,8 +110,8 @@ class AmpliconSet:
 
         logging.info('Saving %s' % self.OBJ_TYPE)
 
-        info = _globals.dfu.save_objects({
-            "id": _globals.params['workspace_id'],
+        info = Var.dfu.save_objects({
+            "id": Var.params['workspace_id'],
             "objects": [{
                 "type": self.OBJ_TYPE,
                 "data": self.obj,
@@ -157,7 +149,7 @@ class AmpliconMatrix:
 
 
     def _get_obj(self):
-        obj = _globals.dfu.get_objects({
+        obj = Var.dfu.get_objects({
             'object_refs': [self.upa]
             })
 
@@ -167,8 +159,12 @@ class AmpliconMatrix:
     def _get_row_attributemapping_ref(self):
         self.row_attrmap_upa = self.obj.get('row_attributemapping_ref')
         if self.row_attrmap_upa == None:
-            logging.warning(msg_createNewRowAttributeMapping)
-            _globals.warnings.append(msg_createNewRowAttributeMapping)
+            msg = (
+                "Input AmpliconSet's AmpliconMatrix does not have a row AttributeMapping to assign traits to. "
+                "A new row AttributeMapping will be created"
+            )
+            logging.warning(msg)
+            Var.warnings.append(msg)
 
 
     def update_row_attributemapping_ref(self, row_attrmap_upa_new):
@@ -177,8 +173,8 @@ class AmpliconMatrix:
 
     def save(self, name=None):
 
-        info = _globals.dfu.save_objects({
-            "id": _globals.params['workspace_id'],
+        info = Var.dfu.save_objects({
+            "id": Var.params['workspace_id'],
             "objects": [{
                 "type": self.OBJ_TYPE,
                 "data": self.obj,
@@ -197,30 +193,34 @@ class AmpliconMatrix:
 ####################################################################################################
 
 class AttributeMapping:
+    '''
+    For AmpliconMatrix's row AttributeMapping
+    '''
 
     OBJ_TYPE = "KBaseExperiments.AttributeMapping"
 
-    def __init__(self, upa, amp_mat: AmpliconMatrix, mini_data=False):
+    def __init__(self, upa, amp_mat: AmpliconMatrix):
         """
-        Input:
-            amp_mat - required because AttributeMapping ids >= AmpliconMatrix ids (for row or col)
-                      and only a subset of AttributeMapping may be assigned
+        Input
+        -----
+        amp_mat
+            required because 
+            (A) If creating self from scratch, need to know `row_ids`
+            (B) AttributeMapping ids >= AmpliconMatrix ids (for row or col)
+                and only a subset of AttributeMapping may be assigned
         """
         self.upa = upa
         self.amp_mat = amp_mat
-        self.mini_data = mini_data
 
-        if upa:
+        if upa is not None:
             self._get_obj()
-        elif upa == None:
-            self._get_obj_new()
         else:
-            raise Exception()
+            self._get_obj_new()
 
 
 
     def _get_obj(self):
-        obj = _globals.dfu.get_objects({
+        obj = Var.dfu.get_objects({
             'object_refs': [self.upa]
             })
 
@@ -244,70 +244,60 @@ class AttributeMapping:
 
 
 
-    @staticmethod
-    def parse_filterByConf(filterByConf_flpth) -> dict:
-        
-        df = pd.read_csv(filterByConf_flpth, sep='\t', index_col=0)
-        id2taxStr_d = df.apply(lambda row: ';'.join(row.array), axis=1).to_dict()
+    def get_attribute_slot(self, attribute: str, source: str) -> int:
 
-        return id2taxStr_d
+        d = {'attribute': attribute, 'source': source}
 
+        ind = -1 # if `attributes` list is empty
 
-        
-    def update_attribute(self, id2attr_d, attribute, source):
-
-        # find index of attribute
-        for ind, attr_d in enumerate(self.obj['attributes']):
-            if attr_d['attribute'] == attribute:
-                attr_ind = ind
-                break
-
-        # fill slots in `instances`
-        for id_, attr_l in self.obj['instances'].items():
-            attr_l[attr_ind] = id2attr_d.get(id_, '')
-
-        self.obj['attributes'][attr_ind]['source'] = source
-
-        if _globals.debug:
-            assert self._is_populated_looks_normal(attribute, source)
-
-
-
-    def add_attribute_slot(self, attribute):
-        
         # check if already exists
-        for attr_d in self.obj['attributes']:
-            if attr_d['attribute'] == attribute:
-                msg = msg_attrAlreadyExists % (attribute, self.name) # TODO take out of error.py
+        for ind, attr_d in enumerate(self.obj['attributes']):
+            if attr_d == d:
+                msg = (
+                    'Row AttributeMapping with name `%s` '
+                    'already has field with attribute `%s` and source `%s`. '
+                    'This field will be overwritten'
+                    % (self.name, attribute, source)
+                )
                 logging.warning(msg)
-                _globals.warnings.append(msg)
-                return
+                Var.warnings.append(msg)
+                return ind
 
         # append slot to `attributes`
-        self.obj['attributes'].append({
-            'attribute': attribute,
-            })
+        self.obj['attributes'].append(d)
 
         # append slots to `instances` 
-        for _, attr_l in self.obj['instances'].items():
+        for attr_l in self.obj['instances'].values():
             attr_l.append('')
+
+        return ind + 1
+
+
+
+    def update_attribute(self, ind, id2attr_d):
+
+        # fill slots in `instances`
+        for id, attr_l in self.obj['instances'].items():
+            attr_l[ind] = id2attr_d.get(id, '')
+
+
 
 
     def save(self, name=None):
         logging.info('Saving %s' % self.OBJ_TYPE)
 
-        object_ = {
+        obj = {
             "type": self.OBJ_TYPE,
             "data": self.obj,
             "name": name if name else self.name,
-             }
+         }
 
         if self.upa:
-            object_["extra_provenance_input_refs"] = [self.upa]
+            obj["extra_provenance_input_refs"] = [self.upa]
 
-        info = _globals.dfu.save_objects({ # TODO consolidate calls for performance?
-            "id": _globals.params['workspace_id'],
-            "objects": [object_]
+        info = Var.dfu.save_objects({ 
+            "id": Var.params['workspace_id'],
+            "objects": [obj]
             })[0]
 
         upa_new = "%s/%s/%s" % (info[6], info[0], info[4])
@@ -315,26 +305,19 @@ class AttributeMapping:
         return upa_new
 
 
-    def _is_populated_looks_normal(self, attribute, source):
+    def is_tax_populated_looks_normal(self, ind):
         """
+        For testing
         Make sure that attribute is present, and all AmpliconSet id's are assigned for
+        Doesn't work for every case since RDP skips assigning for too short sequences
         """
         
-        ind = -1
-        for ind_, attr_d in enumerate(self.obj['attributes']):
-            if attr_d['attribute'] == attribute:
-                ind = ind_
-                assert attr_d['source'] == source
-
-        if ind == -1:
-            return False
-
         num_attr = len(self.obj['attributes'])
 
-        for id_, instance in self.obj['instances'].items():
+        for id, instance in self.obj['instances'].items():
             assert len(instance) == num_attr
-            if id_ in self.amp_mat.obj['data']['row_ids']:
-                assert re.match('(.+;){5}.+', instance[ind]), 'attribute is `' + instance[ind] + '`' # TODO more precise
+            if id in self.amp_mat.obj['data']['row_ids']:
+                assert re.match('(.+;){6}$', instance[ind]), 'attribute is `%s`' % instance[ind]
 
         return True
 

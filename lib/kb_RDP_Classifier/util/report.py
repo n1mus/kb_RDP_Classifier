@@ -8,13 +8,14 @@ import shutil
 import logging
 import uuid
 
+from .config import Var
+
+
 pd.set_option('display.max_rows', 100)
 pd.set_option('display.max_columns', 15)
 pd.set_option('display.width', 1000)
 pd.set_option('display.max_colwidth', 14)
 
-
-from .config import _globals
 
 DEFAULT_PNG_SHAPE = (500, 700) # plotly's
 
@@ -22,20 +23,23 @@ DEFAULT_PNG_SHAPE = (500, 700) # plotly's
 
 class Parser:
 
-    def __init__(self, fixRank_flpth, filterByConf_flpth, conf: float):
+    def __init__(self, fixRank_flpth, filterByConf_flpth):
         self.fixRank_flpth = fixRank_flpth
         self.filterByConf_flpth = filterByConf_flpth
-        self.conf = conf
 
 
     def parse_filterByConf(self):
-        
-        df = pd.read_csv(self.filterByConf_flpth, sep='\t', index_col=0)
+
+        # index is amplicon id
+        # rest of cols are domain-genus
+        df = pd.read_csv(self.filterByConf_flpth, sep='\t', index_col=0) 
         return df
 
 
     def parse_fixRank(self):
         
+        # index is amplicon id
+
         df = pd.read_csv(self.fixRank_flpth, sep='\t', header=None, 
             names=['sequence', 'domain', 'domain_conf', 'phylum', 'phylum_conf', 'class', 'class_conf', 
             'order', 'order_conf', 'family', 'family_conf', 'genus', 'genus_conf'], 
@@ -48,14 +52,12 @@ class Parser:
 
 
 
-# TODO make colors for taxa match across graphs
+####################################################################################################
+####################################################################################################
+####################################################################################################
+def do_pie(parser, png_flpth, html_flpth):
 
-####################################################################################################
-####################################################################################################
-####################################################################################################
-def do_pie_chart(parser, png_flpth, html_flpth):
-
-    logging.info('Generating pie chart')
+    logging.info('Generating pie charts')
 
     df, tax_lvls, conf_cols = parser.parse_fixRank()
 
@@ -70,7 +72,7 @@ def do_pie_chart(parser, png_flpth, html_flpth):
         
         tax_lvl_last = 'root'
         for tax_lvl in tax_lvls:
-            if confs[tax_lvl] < parser.conf:
+            if confs[tax_lvl] < Var.params.get('conf'):
                 counts[tax_lvl_last] += 1
                 break
             else:
@@ -89,11 +91,15 @@ def do_pie_chart(parser, png_flpth, html_flpth):
 
     #
     fig = go.Figure(data=[go.Pie(
-        labels=list(counts.keys()), values=list(counts.values()), textinfo='label+percent', sort=False)])
+        labels=list(counts.keys())[::-1], # rev so color matches hist
+        values=list(counts.values())[::-1], 
+        textinfo='label+percent', 
+        sort=False
+    )])
     
     fig.update_layout(
         title={
-            'text': 'Assignment Cutoff (bootstrap threshold=%.2f)' % parser.conf,
+            'text': 'Assignment Cutoff (bootstrap threshold=%.2f)' % Var.params.get('conf'),
             'x': 0.5,
         },
         showlegend=False
@@ -108,23 +114,10 @@ def do_pie_chart(parser, png_flpth, html_flpth):
 ####################################################################################################
 def do_histogram(parser, png_flpth, html_flpth):
 
-    logging.info('Generating histogram')
+    logging.info('Generating histogram') 
 
     df, tax_lvls, conf_cols = parser.parse_fixRank()
     print(df)
-
-    '''
-    num_lvls = len(tax_lvls)
-
-    num_colors = num_lvls
-    inc = int(256 / (num_colors - 1))
-    RGB_up = [i * inc for i in range(num_colors)]
-    RGB_down = RGB_up[::-1]
-
-    blue_yellow = ['rgb(' + str(RGB_up[i]) + ',' + str(RGB_up[i]) + ',' + str(RGB_down[i]) + ')' for i in range(num_colors)]
-
-    print(blue_yellow)
-    '''
 
     conf_all = []
     for conf_col in conf_cols:
@@ -166,10 +159,10 @@ def do_sunburst(parser, png_flpth, html_flpth):
     df = parser.parse_filterByConf()
     print(df)
 
-    fig = px.sunburst(df, path=df.columns.tolist())
+    fig = px.sunburst(df, path=df.columns.tolist(), color='phylum')
 
     fig.update_layout(
-        title_text='Taxonomic Assignment (bootstrap threshold=%.2f)' % parser.conf, # TODO conf should be arg, not in parser
+        title_text='Taxonomic Assignment (bootstrap threshold=%s)' % Var.params.rdp_prose['conf'],
         title_x=0.5,
     )
 
@@ -194,22 +187,14 @@ def do_sunburst(parser, png_flpth, html_flpth):
 
 class HTMLReportWriter:
 
-    def __init__(self, out_files, params_prose, cmd_l):
+    def __init__(self, out_files, cmd_l):
         '''
-        out_files - [fixRank, filterByConf]
-        params_prose - all str
+        out_files - [*fixRank*, *filterByConf*]
         '''
         self.replacement_d = {}
-
-        self.parser = Parser(out_files[0], out_files[1], float(params_prose['conf']))
-
-        #
-        self.params_prose = params_prose
+        self.parser = Parser(out_files[0], out_files[1])
         self.cmd_l = cmd_l
 
-        #
-        self.report_dir = os.path.join(_globals.shared_folder, str(uuid.uuid4()))
-        os.mkdir(self.report_dir)
 
 
     def _compile_cmd(self):
@@ -224,15 +209,13 @@ class HTMLReportWriter:
 
     def _compile_figures(self):
         #
-        self.fig_dir = os.path.join(self.report_dir, 'fig')
+        self.fig_dir = os.path.join(Var.report_dir, 'fig')
         os.mkdir(self.fig_dir)
 
-
         #
-        figname_l = ['histogram', 'pie_chart', 'sunburst']
+        figname_l = ['histogram', 'pie', 'sunburst']
         png_flpth_l = [os.path.join(self.fig_dir, figname + '.png') for figname in figname_l]
-        html_flpth_l = [os.path.join(self.report_dir, figname + '_plotly.html') for figname in figname_l]
-
+        html_flpth_l = [os.path.join(Var.report_dir, figname + '_plotly.html') for figname in figname_l]
         figfunc_l = ['do_' + figname for figname in figname_l]
 
         # call plotly-doing functions
@@ -261,16 +244,15 @@ class HTMLReportWriter:
 
         
         REPORT_HTML_TEMPLATE_FLPTH = '/kb/module/ui/output/report.html'
-        html_flpth = os.path.join(self.report_dir, 'report.html')
+        html_flpth = os.path.join(Var.report_dir, 'report.html')
 
-        with open(REPORT_HTML_TEMPLATE_FLPTH, 'r') as src_fp:
-            with open(html_flpth, 'w') as dst_fp:
-                for line in src_fp:
+        with open(REPORT_HTML_TEMPLATE_FLPTH) as src_fh:
+            with open(html_flpth, 'w') as dst_fh:
+                for line in src_fh:
                     if line.strip() in self.replacement_d:
-                        dst_fp.write(self.replacement_d[line.strip()])
+                        dst_fh.write(self.replacement_d[line.strip()])
                     else:
-                        dst_fp.write(line)
-        
+                        dst_fh.write(line)
 
-        return self.report_dir, html_flpth
+        return html_flpth
 

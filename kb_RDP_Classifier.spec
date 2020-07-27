@@ -11,6 +11,6 @@ module kb_RDP_Classifier {
     /*
         This example function accepts any number of parameters and returns results in a KBaseReport
     */
-    funcdef classify(mapping<string,UnspecifiedObject> params) returns (ReportResults output) authentication required;
+    funcdef run_classify(mapping<string,UnspecifiedObject> params) returns (ReportResults output) authentication required;
 
 };

@@ -6,16 +6,56 @@ import sys
 import uuid
 import subprocess
 import functools
+import json
+import pandas as pd
+import csv
 
 from installed_clients.WorkspaceClient import Workspace
 from installed_clients.DataFileUtilClient import DataFileUtil
 from installed_clients.KBaseReportClient import KBaseReport
 
+from .util.params import Params
 from .util.report import HTMLReportWriter
 from .util.dprint import dprint
-from .util.config import reset, _globals
+from .util.config import reset_Var, Var
 from .util.kbase_obj import AmpliconSet, AmpliconMatrix, AttributeMapping
 from .util.error import *
+
+
+
+
+def run_check(cmd: str):
+    logging.info('Running cmd `%s`' % cmd)
+    
+    # TODO remove shell
+    completed_proc = subprocess.run(cmd, shell=True, executable='/bin/bash', stdout=sys.stdout, stderr=sys.stderr)
+
+    if completed_proc.returncode != 0:
+        raise NonZeroReturnException(
+            "Command `%s` exited with non-zero return code `%d`. "
+            "Check logs for more details" %
+            (cmd, completed_proc.returncode)
+        )
+
+
+def parse_filterByConf(filterByConf_flpth: str, pad_ranks=True) -> dict:
+
+    NUM_RANKS = 7
+    
+    # index is amplicon id
+    df = pd.read_csv(filterByConf_flpth, sep='\t', index_col=0, quoting=csv.QUOTE_NONE)
+    id2taxStr_d = df.apply(
+        lambda row: ';'.join(
+            list(row.array) + ([''] * (NUM_RANKS - len(row.array)) if pad_ranks is True else []) 
+        ), 
+        axis=1
+    ).to_dict()
+
+    return id2taxStr_d
+
+
+
+
 #END_HEADER
 
 
@@ -47,24 +87,18 @@ class kb_RDP_Classifier:
         #BEGIN_CONSTRUCTOR
         logging.basicConfig(format='%(created)s %(levelname)s: %(message)s',
                             level=logging.INFO)
+        logging.getLogger().addHandler(logging.StreamHandler(sys.stdout))
 
-        callback_url = os.environ['SDK_CALLBACK_URL']
-        workspace_url = config['workspace-url']
-        shared_folder = config['scratch']
+        self.callback_url = os.environ['SDK_CALLBACK_URL']
+        self.workspace_url = config['workspace-url']
+        self.shared_folder = config['scratch']
         
-        self._globals = { # shared by all API-method runs (?)
-            'callback_url': callback_url,
-            'shared_folder': config['scratch'], 
-            'ws': Workspace(workspace_url),
-            'dfu': DataFileUtil(callback_url),
-            'kbr': KBaseReport(callback_url),
-            }
 
         #END_CONSTRUCTOR
         pass
 
 
-    def classify(self, ctx, params):
+    def run_classify(self, ctx, params):
         """
         This example function accepts any number of parameters and returns results in a KBaseReport
         :param params: instance of mapping from String to unspecified object
@@ -73,28 +107,77 @@ class kb_RDP_Classifier:
         """
         # ctx is the context object
         # return variables are: output
-        #BEGIN classify
+        #BEGIN run_classify
+
+        logging.info('Entered `run_classify` with params:\n`%s`' % json.dumps(params, indent=3))
 
 
+        #
+        ##
+        ### params
+        ####
+        #####
 
-        dprint('params', run=locals()) # TODO validate `params`
-                                       # TODO ui option to append to name?
+        params = Params(params)
+
+        dprint('params', run=locals())
 
 
-        # set up globals ds `_globals` for this API-method run
+        #
+        ##
+        ### globals and directories
+        ####
+        #####
 
-        reset(_globals) # clear all fields but `debug`
-        _globals.update({
-            **self._globals,
+        '''
+        tmp/                                        `shared_folder`
+        └── run_kb_rdp_classifier_<uuid>/           `run_dir`
+            ├── return/                             `return_dir`
+            |   ├── cmd.txt
+            |   ├── study_seqs.fna
+            |   └── RDP_Classifier_output/          `out_dir`
+            |       ├── out_filterByConf.tsv
+            |       └── out_fixedRank.tsv
+            └── report/                             `report_dir`
+                ├── fig
+                |   ├── histogram.png
+                |   ├── pie.png
+                |   └── sunburst.png
+                ├── histogram_plotly.html
+                ├── pie_plotly.html
+                ├── suburst_plotly.html
+                └── report.html
+        '''
+
+        ##
+        ## set up globals ds `Var` for this API-method run
+        ## which involves making this API-method run's directory structure
+
+        reset_Var() # clear all fields but `debug` and config stuff
+        Var.update({
             'params': params,
-            'run_dir': os.path.join(self._globals['shared_folder'], str(uuid.uuid4())),
+            'run_dir': os.path.join(self.shared_folder, 'run_kb_rdp_classifier_' + str(uuid.uuid4())),
+            'dfu': DataFileUtil(self.callback_url),
+            'ws': Workspace(self.workspace_url),
+            'kbr': KBaseReport(self.callback_url),
             'warnings': [],
-            'classifierJar_flpth': '/opt/rdp_classifier_2.12/dist/classifier.jar',
-            })
+        })
 
-        os.mkdir(_globals.run_dir)
+        os.mkdir(Var.run_dir)
 
+        Var.update({
+            'return_dir': os.path.join(Var.run_dir, 'return'),
+            'report_dir': os.path.join(Var.run_dir, 'report'),
+        })
 
+        os.mkdir(Var.return_dir)
+        os.mkdir(Var.report_dir)
+
+        Var.update({
+            'out_dir': os.path.join(Var.return_dir, 'RDP_Classifier_output')
+        })
+
+        os.mkdir(Var.out_dir)
 
 
         #
@@ -104,55 +187,20 @@ class kb_RDP_Classifier:
         #####
 
 
-        if _globals.debug and params.get('skip_obj'):
-            dprint('Skip obj - loading objects')
-        
-        else:
-            # input object, which has the amplicons
-            amp_set = AmpliconSet(params['amplicon_set_upa'], mini_data=params.get('mini_data'))
-            amp_set.to_fasta()
+        # input object, which has the amplicons
+        amp_set = AmpliconSet(params['amplicon_set_upa'])
 
-            # intermediate referenced
-            amp_mat = AmpliconMatrix(amp_set.amp_mat_upa)
+        # intermediate referenced
+        amp_mat = AmpliconMatrix(amp_set.amp_mat_upa)
 
-            # if `row_attrmap_upa` == None, 
-            # create new row AttributeMapping object 
-            # from amp_mat.obj['data']['row_ids']
-            row_attrmap = AttributeMapping(upa=amp_mat.row_attrmap_upa, amp_mat=amp_mat)  
+        # if `row_attrmap_upa` == None, 
+        # create new row AttributeMapping object 
+        # from amp_mat.obj['data']['row_ids']
+        row_attrmap = AttributeMapping(upa=amp_mat.row_attrmap_upa, amp_mat=amp_mat)  
 
-            dprint('params["amplicon_set_upa"]', 'amp_set.amp_mat_upa', 'amp_mat.row_attrmap_upa', run=locals())
+        dprint('params["amplicon_set_upa"]', 'amp_set.amp_mat_upa', 'amp_mat.row_attrmap_upa', run=locals())
 
 
-
-
-        #
-        ##
-        ### params
-        ####
-        #####
-
-
-        defaults = {
-            'conf': 0.8,
-            'gene': '16srrna',
-            'minWords': None,
-        }
-
-        params_rdp = params.get('rdp_classifier', defaults)
-
-        params_rdp_prose = { # for printing
-            'conf': '%.2f' % params_rdp.get('conf', defaults['conf']),
-            'gene': params_rdp.get('gene', defaults['gene']),
-            'minWords': str(params_rdp.get('minWords', 'default')),
-        }
-
-        cmd_params = []
-        for key, value in defaults.items():
-            if key in params_rdp and params_rdp[key] != value:
-                cmd_params.append('--' + key + ' ' + str(params_rdp[key]))
-
-
-        dprint('cmd_params', run=locals())
 
 
         #
@@ -161,60 +209,30 @@ class kb_RDP_Classifier:
         ####
         #####
 
-        out_filterByConf_flpth = os.path.join(_globals.run_dir, 'out_filterByConf.tsv')
-        out_fixRank_flpth = os.path.join(_globals.run_dir, 'out_fixRank.tsv')
+        fasta_flpth = os.path.join(Var.return_dir, 'study_seqs.fna')
+        cmd_flpth = os.path.join(Var.return_dir, 'cmd.txt')
+        out_filterByConf_flpth = os.path.join(Var.out_dir, 'out_filterByConf.tsv')
+        out_fixRank_flpth = os.path.join(Var.out_dir, 'out_fixRank.tsv')
+        out_shortSeq_flpth = os.path.join(Var.out_dir, 'out_unclassifiedShortSeqs.txt') # seqs too short to classify
+
+        amp_set.to_fasta(fasta_flpth)
+
+        cmd = (  
+            'java -Xmx2g -jar %s classify %s ' # custom trained propfiles need bit more memory
+            % (Var.classifierJar_flpth, fasta_flpth) 
+            + ' '.join(params.cli_args)
+        )
+        
+        cmd_fixRank_shortSeq = cmd + ' --format filterByConf --outputFile %s --shortseq_outfile %s' % (out_filterByConf_flpth, out_shortSeq_flpth)
+        cmd_filterByConf = cmd + ' --format fixRank --outputFile %s' % out_fixRank_flpth
 
 
-        if _globals.debug and params.get('skip_run'):
-            dprint('Skipping run')
-            dprint(f'cp /kb/module/test/data/* {_globals.run_dir}', run='cli')
+        with open(cmd_flpth, 'w') as fh:
+            fh.write(cmd_fixRank_shortSeq + '\n')
+            fh.write(cmd_filterByConf + '\n')
 
-            cmd_fixRank = 'Skip'
-            cmd_filterByConf = 'Skip'
-
-
-        else:
-          
-            cmd_base = 'java -Xmx1g -jar %s classify %s ' % (_globals.classifierJar_flpth, 
-                amp_set.fasta_flpth) + ' '.join(cmd_params)
-            
-            cmd_fixRank = cmd_base + ' --format filterByConf --outputFile %s' % out_filterByConf_flpth
-            cmd_filterByConf = cmd_base + ' --format fixRank --outputFile %s' % out_fixRank_flpth
-
-
-
-
-
-        #
-        ##
-        ### subproc
-        ####
-        #####
-
-
-        if _globals.debug and params.get('skip_run'):
-            logging.debug('Skip run')
-
-        else:
-
-            subproc_run = functools.partial( # TODO remove shell
-                subprocess.run, shell=True, executable='/bin/bash', stdout=sys.stdout, stderr=sys.stderr)
-
-
-            def run_check(cmd, subproc_run_kwargs={}):
-                logging.info('Running cmd `%s`' % cmd)
-                completed_proc = subproc_run(cmd, **subproc_run_kwargs)
-                if completed_proc.returncode != 0:
-                    raise NonZeroReturnException(
-                        "Command: `%s` exited with non-zero return code: `%d`. "
-                        "Check logs for more details" %
-                        (cmd, completed_proc.returncode))
-
-
-            run_check(cmd_fixRank)
-            run_check(cmd_filterByConf)
-
-
+        run_check(cmd_fixRank_shortSeq)
+        run_check(cmd_filterByConf)
 
 
 
@@ -224,35 +242,31 @@ class kb_RDP_Classifier:
         ####
         #####
 
-        source = 'kb_RDP_Classifier/classify'
-        attribute = 'RDP Classifier Taxonomy, ' + \
-            'conf=%s, gene=%s, minWords=%s' % (
-            params_rdp_prose['conf'], params_rdp_prose['gene'], params_rdp_prose['minWords'])
+        attribute = (
+            'RDP Classifier taxonomy, '
+            'conf=%s, gene=%s, minWords=%s' 
+            % (params.rdp_prose['conf'], params.rdp_prose['gene'], params.rdp_prose['minWords'])
+        )
+        source = 'kb_rdp_classifier/run_classify' # TODO version?
+
+        id2taxStr_d = parse_filterByConf(out_filterByConf_flpth) 
+
+        dprint('id2taxStr_d', 'len(id2taxStr_d)', run=locals(), max_lines=12)
+
+        ##
+        ## AmpliconSet
+
+        write_setting = params.get('write_amplicon_set_taxonomy', 'do_not_overwrite')
+
+        if write_setting != 'do_not_write':
+            amp_set.write_taxonomy(id2taxStr_d, write_setting=='overwrite')
 
 
-        if _globals.debug and params.get('skip_obj'):
-            logging.debug('Skip obj - add taxStr to AmpliconSet / row AttributeMapping')
+        ##
+        ## row AttributeMapping
 
-        else:
-
-            id2taxStr_d = AttributeMapping.parse_filterByConf(out_filterByConf_flpth) # TODO better place for this func
-
-            dprint('id2taxStr_d', 'len(id2taxStr_d)', run=locals())
-
-            ##
-            ## AmpliconSet
-
-            write_setting = params.get('write_amplicon_set_taxonomy', 'do_not_overwrite')
-    
-            if write_setting != 'do_not_write':
-                amp_set.write_taxonomy(id2taxStr_d, write_setting=='overwrite')
-
-
-            ##
-            ## row AttributeMapping
-
-            row_attrmap.add_attribute_slot(attribute)
-            row_attrmap.update_attribute(id2taxStr_d, attribute, source)
+        ind = row_attrmap.get_attribute_slot(attribute, source)
+        row_attrmap.update_attribute(ind, id2taxStr_d)
 
             
 
@@ -264,28 +278,19 @@ class kb_RDP_Classifier:
         ####
         #####
 
-        if _globals.debug and params.get('skip_obj'):
-            dprint('Skip obj')
-            objects_created = []
+        row_attrmap_upa_new = row_attrmap.save()
 
-        else:
+        amp_mat.update_row_attributemapping_ref(row_attrmap_upa_new)
+        amp_mat_upa_new = amp_mat.save()
 
-            row_attrmap_upa_new = row_attrmap.save()
+        amp_set.update_amplicon_matrix_ref(amp_mat_upa_new)
+        amp_set_upa_new = amp_set.save(name=params.get('output_name', None))
 
-            amp_mat.update_row_attributemapping_ref(row_attrmap_upa_new)
-            amp_mat_upa_new = amp_mat.save()
-
-            amp_set.update_amplicon_matrix_ref(amp_mat_upa_new)
-            amp_set_upa_new = amp_set.save(name=params.get('output_name'))
-
-            objects_created = [
-                {'ref': row_attrmap_upa_new, 'description': 'Added or updated attribute `%s`' % attribute},
-                {'ref': amp_mat_upa_new, 'description': 'Updated row AttributeMapping reference'},
-                {'ref': amp_set_upa_new, 'description': 'Updated AmpliconMatrix reference'},
-            ]
-
-
-
+        objects_created = [
+            {'ref': row_attrmap_upa_new, 'description': 'Added or updated attribute `%s`' % attribute},
+            {'ref': amp_mat_upa_new, 'description': 'Updated row AttributeMapping reference'},
+            {'ref': amp_set_upa_new, 'description': 'Updated AmpliconMatrix reference'},
+        ]
 
 
 
@@ -296,22 +301,19 @@ class kb_RDP_Classifier:
         ####
         #####
 
+        hrw = HTMLReportWriter(
+            out_files=[out_fixRank_flpth, out_filterByConf_flpth], 
+            cmd_l=[cmd_fixRank_shortSeq, cmd_filterByConf]
+        )
 
-        hrw = HTMLReportWriter(out_files=[out_fixRank_flpth, out_filterByConf_flpth], 
-                            params_prose=params_rdp_prose,
-                            cmd_l=[cmd_fixRank, cmd_filterByConf])
 
-        report_dir, html_flpth = hrw.write()
-
+        html_flpth = hrw.write()
 
 
         html_links = [{
-            'path': report_dir,
+            'path': Var.report_dir,
             'name': os.path.basename(html_flpth),
-            }]
-
-
-
+        }]
 
 
 
@@ -322,41 +324,32 @@ class kb_RDP_Classifier:
         #####
 
         file_links = [{
-            'path': _globals.run_dir,
+            'path': Var.run_dir,
             'name': 'RDP_Classifier_results.zip',
             'description': 'Input, output'
-            }]
+        }]
 
         params_report = {
-            'warnings': _globals.warnings,
+            'warnings': Var.warnings,
             'objects_created': objects_created,
             'html_links': html_links,
             'direct_html_link_index': 0,
             'file_links': file_links,
             'workspace_name': params['workspace_name'],
-            }
+        }
 
-        if _globals.debug and params.get('return_testingInfo'):
-            return {
-                **params_report,
-                'source': source,
-                'attribute': attribute,
-            }
+        report = Var.kbr.create_extended_report(params_report)
 
-        if _globals.debug and params.get('skip_objReport'):
-            output = {}
-        else:
-            report = _globals.kbr.create_extended_report(params_report)
-            output = {
-                'report_name': report['name'],
-                'report_ref': report['ref'],
-            }
+        output = {
+            'report_name': report['name'],
+            'report_ref': report['ref'],
+        }
 
-        #END classify
+        #END run_classify
 
         # At some point might do deeper type checking...
         if not isinstance(output, dict):
-            raise ValueError('Method classify return value ' +
+            raise ValueError('Method run_classify return value ' +
                              'output is not type dict as required.')
         # return the results
         return [output]

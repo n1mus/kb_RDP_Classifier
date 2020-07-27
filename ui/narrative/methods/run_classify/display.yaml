@@ -45,22 +45,22 @@ parameters :
         ui-name : |
             gene
         short-hint : |
-            Gene and training dataset to run against (not yet supported)
+            Gene and training dataset to classify against
     minWords :
         ui-name : |
             minWords
         short-hint: |
             Number of 8-mers from input sequence to randomly select with replacement to calculate bootstrap confidence. Default is 1/8 the length of the sequence (leave field blank for default behavior)
-    write_amplicon_set_taxonomy:
+    write_ampset_taxonomy:
         ui-name: |
-            Write taxonomy assignments to AmpliconSet?
+            Write taxonomy to AmpliconSet?
         short-hint: |
             Write taxonomy assignments to AmpliconSet? Either do not write, do not overwrite if any taxonomies for any amplicons have already been written, or overwrite all taxonomies
             
     
 
 parameter-groups:
-    rdp_classifier:
+    rdp_clsf:
         ui-name: |
             RDP Classifier Options
         short-hint: |
@@ -73,4 +73,21 @@ description : |
     <p>Curabitur auctor, metus at tristique euismod, odio elit tincidunt neque, a facilisis sem massa convallis dolor. Interdum et malesuada fames ac ante ipsum primis in faucibus. Nunc ut hendrerit tellus. Nunc lacinia laoreet finibus. Etiam vitae sagittis enim. Fusce consectetur porta est eu pretium. In hac habitasse platea dictumst. Integer pellentesque sit amet sapien id venenatis. Nullam ac risus at orci eleifend aliquet. Vestibulum elit purus, euismod a nibh quis, pellentesque semper leo. Curabitur ullamcorper felis hendrerit nunc egestas, sit amet pharetra sapien porttitor. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos. Maecenas hendrerit ipsum a ligula aliquet vestibulum. Duis a ante urna. Aenean ante neque, rhoncus id luctus ut, accumsan vel nunc.</p>
 
     <p>Pellentesque accumsan aliquet magna, id consectetur tellus condimentum eu. Suspendisse elit dui, ornare ac leo eget, tincidunt feugiat orci. Maecenas auctor gravida lacinia. Mauris interdum nisi vel gravida varius. Nullam tempus, purus eget posuere aliquet, odio elit semper massa, quis facilisis massa odio vitae lacus. Fusce varius enim a mi vehicula tempus. Maecenas faucibus tellus ipsum, at venenatis ipsum auctor et. Suspendisse sem mi, dignissim id porta efficitur, auctor eget magna. Vivamus varius purus nulla, porttitor euismod lorem cursus quis. Nulla sit amet eros nec sem ultrices pulvinar.</p>
+
+publications:
+
+    -
+        display-text: |
+
+            Wang, Qiong et al. “Naive Bayesian classifier for rapid assignment of rRNA sequences into the new bacterial taxonomy.” Applied and environmental microbiology vol. 73,16 (2007): 5261-7. doi:10.1128/AEM.00062-07
+
+    -
+        display-text: |
+
+            Quast C, Pruesse E, Yilmaz P, Gerken J, Schweer T, Yarza P, Peplies J, Glockner FO (2013) The SILVA ribosomal RNA gene database project: improved data processing and web-based tools. Nucleic Acids Research 41:D590-D596 
+
+    -
+        display-text: |
+
+            Yilmaz P, Parfrey LW, Yarza P, Gerken J, Pruesse E, Quast C, Schweer T, Peplies J, Ludwig W, Glockner FO (2014) The SILVA and "All-species Living Tree Project (LTP)" taxonomic frameworks. Nucleic Acid Res. 42:D643-D648
 

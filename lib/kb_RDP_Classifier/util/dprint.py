@@ -1,5 +1,5 @@
 import functools
-import pprint, json
+import json as json_
 import subprocess
 import sys
 import os
@@ -8,27 +8,30 @@ import logging
 import inspect
 import time as _time
 
-from .config import _globals
+from .config import Var
 
 
 subproc_run = functools.partial(
         subprocess.run, stdout=sys.stdout, stderr=sys.stderr, shell=True, executable='/bin/bash')
 
-TAG_WIDTH = 100
-MAX_LINES = 70
+TAG_WIDTH = 80
+MAX_LINES = 15
 
+# TODO filename -> dutil.py
 
-def dprint(*args, run=False, where=True, time=False, max_lines=MAX_LINES, subproc_run_kwargs={}, print_kwargs={}):
+def dprint(*args, run=False, json=True, where=False, time=False, max_lines=MAX_LINES, exit=False, 
+           subproc_run_kwargs={}, print_kwargs={}):
+    '''Debug print'''
 
-    if not _globals.debug:
-        return
+    if Var.debug is not True:
+        return None # dprint can be expected to return retcode
 
     print = functools.partial(__builtins__['print'], **print_kwargs)
 
     def print_format(arg):
-        if isinstance(arg, (dict, list)):
-            arg_json = json.dumps(arg, indent=3, default=str)
-            if arg_json.count('\n') > max_lines:
+        if json is True and isinstance(arg, (dict, list)):
+            arg_json = json_.dumps(arg, indent=3, default=str)
+            if max_lines is not None and arg_json.count('\n') > max_lines:
                 arg_json = '\n'.join(arg_json.split('\n')[0:max_lines] + ['...'])
             print(arg_json)
         else:
@@ -38,7 +41,7 @@ def dprint(*args, run=False, where=True, time=False, max_lines=MAX_LINES, subpro
 
     if where:
         last_frame = inspect.stack()
-        print("(file `%s`)\n(func `%s`) " % (os.path.basename(last_frame[1][1]), last_frame[1][3]))
+        print("(file `%s`)\n(func `%s`)\n(line `%d`)" % (last_frame[1][1], last_frame[1][3], last_frame[1][2]))
     
     for arg in args:
         if time:
@@ -59,15 +62,18 @@ def dprint(*args, run=False, where=True, time=False, max_lines=MAX_LINES, subpro
             print('[%fs]' % t)
     
     print('-' * TAG_WIDTH)
+
+    if exit:
+        sys.exit(0)
     
     # return last retcode
-    if run and run in ['cli', 'shell']:
+    if run in ['cli', 'shell']:
         return retcode
 
 
 def where_am_i(f):
     '''Decorator'''
     def f_new(*args, **kwargs):
-        dprint("where am i?\n(func `%s`)" % (f.__qualname__), where=False)
+        dprint("where am i? in module `%s` method `%s`" % (globals()['__name__'], f.__qualname__))
         f(*args, **kwargs)
     return f_new
