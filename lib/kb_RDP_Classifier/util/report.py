@@ -99,7 +99,7 @@ def do_pie(parser, png_flpth, html_flpth):
     
     fig.update_layout(
         title={
-            'text': 'Assignment Cutoff (bootstrap threshold=%.2f)' % Var.params.get('conf'),
+            'text': 'Assignment Cutoff (bootstrap threshold=%s)' % Var.params.rdp_prose['conf'],
             'x': 0.5,
         },
         showlegend=False
@@ -140,7 +140,8 @@ def do_histogram(parser, png_flpth, html_flpth):
             'tickmode': 'linear',
             'tick0': 0,
             'dtick': 0.1
-            }
+        },
+        yaxis_range=[0, 1],
     )
 
     fig.write_image(png_flpth, width=int(DEFAULT_PNG_SHAPE[1] * 1.5))
@@ -153,6 +154,7 @@ def do_histogram(parser, png_flpth, html_flpth):
 ####################################################################################################
 def do_sunburst(parser, png_flpth, html_flpth):
     # TODO cut out unassigned branches? - save text/space
+    # TODO don't show phylum on hover text/label (but keep using it for color)
 
     logging.info('Generating sunburst')
 

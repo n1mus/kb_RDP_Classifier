@@ -22,8 +22,8 @@ class Params:
     -----------------------
     * `[]` and `get` access to flattened params, 
       with app/user-specified/`None` default (in that order)
-    * prose RDP Clsf params
-    * CLI RDP Clsf params
+    * RDP Clsf params in prose mode
+    * RDP Clsf params in CLI args mode
 
     '''
 
@@ -47,9 +47,20 @@ class Params:
 
         # TODO validation
 
+        ##
+        ## custom transformations
+        if 'output_name' in params and params['output_name'] == '':
+            params['output_name'] = None # treat empty string as null case
+                                         # since ui only returns strings for string type
+
+        ##
+        ##
         self.params = params
         self.flatParams = flatten(params)
 
+
+        ##
+        ##
         if self.clsf_with_trained:
             raise NotImplementedError('Classifying against custom datasets not ready')
 
@@ -63,6 +74,7 @@ class Params:
     @property
     def clsf_with_trained(self):
         return self.get('gene') in self.CUSTOM_GENES
+
 
 
     @property
@@ -105,7 +117,11 @@ class Params:
 
     def get(self, key, default=None):
         '''
-        Return value, app default, user-specified default, or None, in that order
+        Generally,
+        return value, app default, user-specified default, or None, in that order
+
+        Does other considerations for
+        * `output_name`
         '''
         if key in self.flatParams:
             return self.flatParams[key]

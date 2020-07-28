@@ -53,7 +53,6 @@ class kb_RDP_ClassifierTest(unittest.TestCase):
     '''
     Tests to run will be filtered by code block following class definition
     '''
-
 ####################################################################################################
 ############################# UNIT TESTS ###########################################################
 ####################################################################################################
@@ -326,12 +325,12 @@ class kb_RDP_ClassifierTest(unittest.TestCase):
             self.assertTrue(len(attr_l) == num_attr)
 
 
+
+    def test_report(self):
     ####################
     ####################
-    def test_assert(self):
-        '''Test that asserts have not been compiled out'''
-        with self.assertRaises(AssertionError):
-            assert False
+        # TODO
+        pass
 
 ####################################################################################################
 ##################################### integration tests ############################################
@@ -470,6 +469,12 @@ class kb_RDP_ClassifierTest(unittest.TestCase):
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
+    ####################
+    ####################
+    def test_assert(self):
+        '''Test that asserts have not been compiled out'''
+        with self.assertRaises(AssertionError):
+            assert False
 
     @classmethod
     def setUpClass(cls):
@@ -517,7 +522,7 @@ class kb_RDP_ClassifierTest(unittest.TestCase):
         print('Tests ran:', tests)
         print('Tests skipped:', list(set(all_tests) - set(tests)))
         print('do_patch:', do_patch)
-        dec = '!!!' * 100
+        dec = '!!!' * 200
         print(dec,  "DO NOT FORGET TO GRAB HTML(S)", dec)
 
     @staticmethod

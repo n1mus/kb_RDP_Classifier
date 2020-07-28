@@ -115,7 +115,7 @@ class AmpliconSet:
             "objects": [{
                 "type": self.OBJ_TYPE,
                 "data": self.obj,
-                "name": name if name else self.name,
+                "name": name if name is not None else self.name,
                 #"extra_provenance_input_refs": [self.upa], # don't need if original version is input
              }]
         })[0]
