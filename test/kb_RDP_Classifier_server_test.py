@@ -17,7 +17,7 @@ from kb_RDP_Classifier.util.config import Var
 from kb_RDP_Classifier.util.params import flatten, Params
 from kb_RDP_Classifier.util.kbase_obj import AmpliconSet, AmpliconMatrix, AttributeMapping
 from kb_RDP_Classifier.util.dprint import dprint, where_am_i
-from kb_RDP_Classifier.util.error import * # exceptions and error/warning msgs
+from kb_RDP_Classifier.util.error import * # exceptions 
 from kb_RDP_Classifier.kb_RDP_ClassifierImpl import run_check, parse_filterByConf
 from mocks import * # upas, mocks ...
 
@@ -26,15 +26,14 @@ from mocks import * # upas, mocks ...
 ######### TOGGLE PATCH ###############
 ######################################
 ###################################### 
-do_patch = False # toggle patching for tests that can run independent of it
+do_patch = True # toggle patching for tests that can run independently of it
 
 if do_patch:
     patch_ = patch
     patch_dict_ = patch.dict
-
 else:
-    patch_ = lambda *a, **kwargs: lambda f: f
-    patch_dict_ = lambda *a, **kwargs: lambda f: f
+    patch_ = lambda *a, **k: lambda f: f
+    patch_dict_ = lambda *a, **k: lambda f: f
 ######################################
 ######################################
 ######################################
@@ -91,9 +90,9 @@ class kb_RDP_ClassifierTest(unittest.TestCase):
         self.assertTrue(all([taxStr.count(';') == 6 for taxStr in id2taxStr_d.values()]))
 
         self.assertTrue(id2taxStr_d['amplicon_id_0'] == 
-            'Bacteria;"Proteobacteria";Alphaproteobacteria;Rhizobiales;unclassified_Rhizobiales;unclassified_Rhizobiales;')
+            'Bacteria;Proteobacteria;Alphaproteobacteria;Rhizobiales;unclassified_Rhizobiales;unclassified_Rhizobiales;')
         self.assertTrue(id2taxStr_d['amplicon_id_9'] == 
-            'Bacteria;"Proteobacteria";Gammaproteobacteria;Legionellales;Coxiellaceae;Aquicella;')
+            'Bacteria;Proteobacteria;Gammaproteobacteria;Legionellales;Coxiellaceae;Aquicella;')
 
 
     ####################
@@ -126,40 +125,94 @@ class kb_RDP_ClassifierTest(unittest.TestCase):
         self.assertTrue(flatd['key5'] == 'gnat')
 
         ##
-        ## test `Params`, all optionals present
+        ## test `Params` defaults
 
-        params_ = {
-            'amplicon_set_upa': 'a/b/c',
+        params = Params({
+            'amplicon_set_upa': '1/2/3',
             'output_name': None,
             'rdp_clsf': {
-                'conf': 0.999,
+                'conf': 0.8,
                 'gene': '16srrna',
                 'minWords': None,
             },
-            'write_ampset_taxonomy': 'overwrite',
-        }
+            'write_ampset_taxonomy': 'do_not_overwrite',
+        })
 
-        params = Params(params_)
+        self.assertTrue(params['amplicon_set_upa'] == '1/2/3' and params.getd('amplicon_set_upa') == '1/2/3')
+        self.assertTrue(params.getd('output_name') is None)
+        self.assertTrue(params.getd('conf') == 0.8)
+        self.assertTrue(params.getd('gene') == '16srrna')
+        self.assertTrue(params.getd('minWords') is None)
+        self.assertTrue(params.getd('write_ampset_taxonomy') == 'do_not_overwrite')
 
-        self.assertTrue(params.clsf_with_trained is False)
         self.assertTrue(
             params.rdp_prose == {
-                'conf': '0.999',
+                'conf': '0.8',
                 'gene': '16srrna',
                 'minWords': 'default'
             },
             json.dumps(params.rdp_prose, indent=4)
         )
-        self.assertTrue(params.cli_args == ['--conf', '0.999'])
-        self.assertTrue('gene' in params)
-        self.assertTrue(not 'GENE' in params)
-        self.assertTrue(params['gene'] == '16srrna')
-        self.assertTrue(params.get('gene') == '16srrna')
-        self.assertTrue(params.get('GENE') is None)
+        self.assertTrue(params.cli_args == [])
         str(params) # should not throw
 
-        # TODO test missing optional params
+        ##
+        ## test `Params` non-default
 
+        params = Params({
+            'amplicon_set_upa': '5/5/5',
+            'output_name': 'my_ampset',
+            'rdp_clsf': {
+                'conf': 0.99999,
+                'gene': 'fungallsu',
+                'minWords': 100,
+            },
+            'write_ampset_taxonomy': 'overwrite',
+        })
+
+        self.assertTrue(params['amplicon_set_upa'] == '5/5/5' and params.getd('amplicon_set_upa') == '5/5/5')
+        self.assertTrue(params.getd('output_name') == 'my_ampset')
+        self.assertTrue(params.getd('conf') == 0.99999)
+        self.assertTrue(params.getd('gene') == 'fungallsu')
+        self.assertTrue(params.getd('minWords') == 100)
+        self.assertTrue(params.getd('write_ampset_taxonomy') == 'overwrite')
+
+        self.assertTrue(
+            params.rdp_prose == {
+                'conf': '0.99999',
+                'gene': 'fungallsu',
+                'minWords': '100'
+            },
+            json.dumps(params.rdp_prose, indent=4)
+        )
+        self.assertTrue(params.cli_args == ['--conf', '0.99999', '--gene', 'fungallsu', '--minWords', '100'], params.cli_args)
+        str(params) # should not throw
+
+
+        ##
+        ## test `Params` no user-supplied values
+
+        params = Params({
+            'amplicon_set_upa': '6/6/6',
+        })
+
+        self.assertTrue(params['amplicon_set_upa'] == '6/6/6' and params.getd('amplicon_set_upa') == '6/6/6')
+        self.assertTrue(params.getd('output_name') is None)
+        self.assertTrue(params.getd('conf') == 0.8)
+        self.assertTrue(params.getd('gene') == '16srrna')
+        self.assertTrue(params.getd('minWords') is None)
+        self.assertTrue(params.getd('write_ampset_taxonomy') == 'do_not_overwrite')
+
+        self.assertTrue(
+            params.rdp_prose == {
+                'conf': '0.8',
+                'gene': '16srrna',
+                'minWords': 'default'
+            },
+            json.dumps(params.rdp_prose, indent=4)
+        )
+        self.assertTrue(params.cli_args == [])
+        str(params) # should not throw
 
     ####################
     ####################
@@ -441,26 +494,6 @@ class kb_RDP_ClassifierTest(unittest.TestCase):
         
 
 
-####################################################################################################
-################## Test against custom trainset ####################################################
-####################################################################################################
-   
-    ####################
-    ####################
-    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.DataFileUtil', new=lambda *a: get_mock_dfu('17770'))
-    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.run_check', new=get_mock_run_check('17770'))
-    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.KBaseReport', new=lambda *a: get_mock_kbr())
-    @unittest.skip('Not implemented')
-    def test_SILVA138SSUNR99(self):
-        ret = self.serviceImpl.run_classify(self.ctx, {
-            **self.params_ws,
-            'amplicon_set_upa': _17770,
-            'rdp_clsf': {
-                'gene': 'SILVA_138_SSU_NR_99',
-            },
-            'write_ampset_taxonomy': 'overwrite'
-        })
-
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -538,18 +571,17 @@ class kb_RDP_ClassifierTest(unittest.TestCase):
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #!!!!!!!!!!!!!!!!!!!!!!!!!!! filter what to run !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+all_tests = [k for k, v in kb_RDP_ClassifierTest.__dict__.items() if k.startswith('test') and callable(v)]
 
-all_tests = []
 unit_tests = [
     'test_assert',
     'test_run_check', 'test_parse_filterByConf', 'test_params', 
     'test_AmpliconSet', 'test_AmpliconMatrix_noRowAttrMap_AttributeMapping', 'test_AmpliconMatrix_wRowAttrMap_AttributeMapping',
 ]
-run_tests = ['test_AmpliconSet']
+run_tests = ['test_parse_filterByConf']
 
-for key, value in kb_RDP_ClassifierTest.__dict__.copy().items():
-    if type(key) == str and key.startswith('test') and callable(value):
-        all_tests.append(key)
-        if key not in run_tests:
-            #delattr(kb_RDP_ClassifierTest, key)
+for k, v in kb_RDP_ClassifierTest.__dict__.copy().items():
+    if k.startswith('test') and callable(v):
+        if k not in run_tests:
+            delattr(kb_RDP_ClassifierTest, k)
             pass

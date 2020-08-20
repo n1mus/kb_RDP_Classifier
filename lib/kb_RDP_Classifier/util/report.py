@@ -72,7 +72,7 @@ def do_pie(parser, png_flpth, html_flpth):
         
         tax_lvl_last = 'root'
         for tax_lvl in tax_lvls:
-            if confs[tax_lvl] < Var.params.get('conf'):
+            if confs[tax_lvl] < Var.params.getd('conf'):
                 counts[tax_lvl_last] += 1
                 break
             else:

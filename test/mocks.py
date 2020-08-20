@@ -27,15 +27,16 @@ testData_dir = '/kb/module/test/data'
 ####################################################################################################
 _17770 = '48666/2/9' # AmpliconSet containing 17770 entries
 _17770_AmpMat = '48666/9/8' # accessory AmpliconMatrix to AmpliconSet
-_17770_AttrMap = '48666/8/8' # accessory AttributeMapping to AmpliconMatrix
+_17770_AttrMap = '48666/8/8' # accessory row AttributeMapping to AmpliconMatrix
 
 first50 = "48402/9/2" # AmpliconSet containing first 50 of 17770 entries. row AttributeMapping has all 1770 entries (?)
 
 secret = '51592/6/1' # AmpliconSet. No taxonomy or row AttributeMapping. Do not share
 secret_AmpMat = '49926/5/2' # AmpliconMatrix. No row AttributeMapping. Do not share
 
-secret_wRDP = '51592/9/3' # AmpliconSet with taxonomy but no row AttributeMapping. Do not share
-secret_wRDP_AmpMat = '49926/5/6' # AmpliconMatrix. No row AttributeMapping. Do not Share
+secret_wRDP = '51592/9/3' # AmpliconSet. With taxonomy and row AttributeMapping. Do not share
+secret_wRDP_AmpMat = '49926/5/12' # AmpliconMatrix. With row AttributeMapping with taxonomy. Do not share
+secret_wRDP_colAttrMap = '49226/8/1' # col AttributeMapping. Do not share
 
 
 

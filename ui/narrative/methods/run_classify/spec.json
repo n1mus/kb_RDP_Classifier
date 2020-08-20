@@ -17,7 +17,7 @@
                 "gene",
                 "minWords"
             ],
-            "optional": true,
+            "optional": false,
             "advanced": true,
             "allow_multiple": false,
             "with_border": true
@@ -42,12 +42,12 @@
             "default_values": [ "" ],
             "field_type": "text",
             "text_options": {
-                "valid_ws_type": ["KBaseExperiments.AmpliconSet", "KBaseMatrices.AmpliconMatrix"],
+                "valid_ws_type": ["KBaseExperiments.AmpliconSet"],
                 "is_output_name": true
             }
         },{
             "id": "conf",
-            "optional": true,
+            "optional": false,
             "advanced": true,
             "allow_multiple": false,
             "field_type": "text",
@@ -59,7 +59,7 @@
             }
         },{
             "id": "gene",
-            "optional": true,
+            "optional": false,
             "advanced": true,
             "allow_multiple": false,
             "default_values": [ "16srrna" ],
@@ -102,7 +102,7 @@
             }
         },{
             "id": "write_ampset_taxonomy",
-            "optional": true,
+            "optional": false,
             "advanced": true,
             "allow-multiple": false,
             "field_type": "dropdown",

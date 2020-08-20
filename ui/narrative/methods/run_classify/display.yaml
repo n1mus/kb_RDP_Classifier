@@ -28,19 +28,19 @@ parameters :
         ui-name : |
             AmpliconSet
         short-hint : |
-            Object of type <code>AmpliconSet</code>
+            Object of type <code>AmpliconSet</code>, containing amplicon sequences
     output_name:
         ui-name: |
-            New name for updated input object
+            New AmpliconSet name
         short-hint: |
-            Default is same name, which will save over input object. Enter a different name to avoid saving over
+            Default (leaving field blank) is same name, which would save over input object
         long-hint: |
-            Default is same name, which will save over input object. Enter a different name to avoid saving over
+            Default (leaving field blank) is same name, which would save over input object
     conf:
         ui-name: |
             conf
         short-hint : |
-            Bootstrap confidence threshold
+            Bootstrap confidence threshold, under which a rank will be considered unclassified
     gene :
         ui-name : |
             gene
@@ -50,7 +50,7 @@ parameters :
         ui-name : |
             minWords
         short-hint: |
-            Number of 8-mers from input sequence to randomly select with replacement to calculate bootstrap confidence. Default is 1/8 the length of the sequence (leave field blank for default behavior)
+            Number of 8-mers from input sequence to randomly select with replacement to calculate bootstrap confidence. Default (leave field blank) is 1/8 the length of the sequence
     write_ampset_taxonomy:
         ui-name: |
             Write taxonomy to AmpliconSet?
@@ -62,10 +62,9 @@ parameters :
 parameter-groups:
     rdp_clsf:
         ui-name: |
-            RDP Classifier Options
+            RDP Classifier options
         short-hint: |
-            RDP Classifier Options
-
+            Parameters that the RDP Classifier <code>classify</code> program takes
 
 description : |
     <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed pulvinar efficitur felis, quis tincidunt sem congue at. Vivamus ornare feugiat faucibus. Fusce tincidunt mattis nunc, nec varius purus convallis quis. Nulla facilisi. In at magna dolor. Suspendisse sit amet felis at arcu auctor dapibus vitae pharetra dui. Nam semper mi quis tortor fermentum mollis. Donec a arcu pharetra, rutrum dolor vitae, rutrum mauris. Donec ornare fringilla sagittis. Nam laoreet est in elementum malesuada. Vestibulum id mi eget urna hendrerit feugiat. Donec et ultrices nulla. Phasellus diam eros, dapibus at tempus nec, semper vel ante.</p>

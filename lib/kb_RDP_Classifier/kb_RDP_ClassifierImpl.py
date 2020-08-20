@@ -24,7 +24,7 @@ from .util.error import *
 
 
 
-def run_check(cmd: str):
+def run_check(cmd: str): # TODO time it
     logging.info('Running cmd `%s`' % cmd)
     
     # TODO remove shell
@@ -43,7 +43,7 @@ def parse_filterByConf(filterByConf_flpth: str, pad_ranks=True) -> dict:
     NUM_RANKS = 7
     
     # index is amplicon id
-    df = pd.read_csv(filterByConf_flpth, sep='\t', index_col=0, quoting=csv.QUOTE_NONE)
+    df = pd.read_csv(filterByConf_flpth, sep='\t', index_col=0)
     id2taxStr_d = df.apply(
         lambda row: ';'.join(
             list(row.array) + ([''] * (NUM_RANKS - len(row.array)) if pad_ranks is True else []) 
@@ -256,7 +256,7 @@ class kb_RDP_Classifier:
         ##
         ## AmpliconSet
 
-        write_setting = params.get('write_amplicon_set_taxonomy', 'do_not_overwrite')
+        write_setting = params.getd('write_amplicon_set_taxonomy')
 
         if write_setting != 'do_not_write':
             amp_set.write_taxonomy(id2taxStr_d, write_setting=='overwrite')
@@ -284,7 +284,7 @@ class kb_RDP_Classifier:
         amp_mat_upa_new = amp_mat.save()
 
         amp_set.update_amplicon_matrix_ref(amp_mat_upa_new)
-        amp_set_upa_new = amp_set.save(name=params.get('output_name', None))
+        amp_set_upa_new = amp_set.save(name=params.getd('output_name'))
 
         objects_created = [
             {'ref': row_attrmap_upa_new, 'description': 'Added or updated attribute `%s`' % attribute},

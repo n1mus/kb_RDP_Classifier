@@ -18,7 +18,6 @@ pd.set_option('display.max_colwidth', 20)
 
 
 
-# TODO inheritance
 
 
 
@@ -67,7 +66,7 @@ class AmpliconSet:
         '''
         empty_tax = True
         for amplicon_d in self.obj['amplicons'].values():
-            if len(amplicon_d['taxonomy']) > 0:
+            if len(amplicon_d['taxonomy']) > 0: # ? TODO
                 empty_tax = False
                 break
 
