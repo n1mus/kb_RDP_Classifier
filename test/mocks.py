@@ -36,7 +36,17 @@ secret_AmpMat = '49926/5/2' # AmpliconMatrix. No row AttributeMapping. Do not sh
 
 secret_wRDP = '51592/9/3' # AmpliconSet. With taxonomy and row AttributeMapping. Do not share
 secret_wRDP_AmpMat = '49926/5/12' # AmpliconMatrix. With row AttributeMapping with taxonomy. Do not share
-secret_wRDP_colAttrMap = '49226/8/1' # col AttributeMapping. Do not share
+
+
+
+####################################################################################################
+############################### appdev #############################################################
+####################################################################################################
+
+SRS_OTU = '45965/8/1'
+SRS_OTU_AmpMat = '45748/4/3'
+
+
 
 
 
@@ -59,7 +69,7 @@ def get_mock_dfu(dataset):
     Avoid lengthy `get_objects` and `save_objects`
     '''
     # validate
-    if dataset not in ['17770', 'secret', 'dummy_10by8']:
+    if dataset not in ['17770', 'secret', 'dummy_10by8', 'SRS_OTU']:
         raise NotImplementedError('Input dataset not recognized')
 
     mock_dfu = create_autospec(DataFileUtil, instance=True)
@@ -71,7 +81,7 @@ def get_mock_dfu(dataset):
         if len(params_str) > 100: params_str = params_str[:100] + ' ...'
         logging.info('Mocking `dfu.save_objects` with `params=%s`' % params_str)
 
-        return [['-1111', 1, 2, 3, '-1111', 5, '-1111']] # UPA made from pos 6/0/4
+        return [['mock', 1, 2, 3, 'dfu', 5, 'save_objects']] # UPA made from pos 6/0/4
     
     mock_dfu.save_objects.side_effect = mock_dfu_save_objects
 
@@ -91,6 +101,8 @@ def get_mock_dfu(dataset):
             dummy_10by8_AmpMat_wRowAttrMap: 'get_objects_AmpliconMatrix_wRowAttrMap.json',
             dummy_10by8_AmpMat_noRowAttrMap: 'get_objects_AmpliconMatrix_noRowAttrMap.json',
             dummy_10by8_AttrMap: 'get_objects_AttributeMapping.json',
+            SRS_OTU: 'get_objects_AmpliconSet.json',
+            SRS_OTU_AmpMat: 'get_objects_AmpliconMatrix.json',
             }[upa]
         flpth = os.path.join(testData_dir, 'by_dataset_input', dataset, 'get_objects', flnm)
 
@@ -109,7 +121,7 @@ def get_mock_run_check(dataset):
     Avoid expensive runs of tool
     Copy over `Var.out_dir`
     '''
-    if dataset not in ['17770', 'first50', 'secret', 'dummy_10by8']:
+    if dataset not in ['17770', 'first50', 'secret', 'dummy_10by8', 'SRS_OTU']:
         raise NotImplementedError()
 
     mock_run_check = create_autospec(run_check)
@@ -162,7 +174,7 @@ def get_mock_kbr(dataset=None):
 ####################################################################################################
 ########### allow all UPAs, including _17770* variables, to be imported with * #####################
 ####################################################################################################
-substr_l =['17770', 'first50', 'secret', 'dummy', 'mock', 'testData_dir'] 
+substr_l =['17770', 'first50', 'secret', 'dummy', 'mock', 'testData_dir', 'SRS'] 
 __all__ = [x for x in dir() if any([substr in x for substr in substr_l])]
 
 

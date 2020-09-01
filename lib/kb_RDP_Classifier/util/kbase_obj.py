@@ -5,6 +5,7 @@ import os
 import sys
 import gzip
 import re
+import json
 
 from .dprint import dprint
 from .config import Var
@@ -17,7 +18,23 @@ pd.set_option('display.width', 1000)
 pd.set_option('display.max_colwidth', 20)
 
 
-
+def write_json(obj, flnm, AmpliconSet=False):                                                       
+    '''                                                                                             
+    For debugging/testing                                                                           
+    '''                                                                                             
+    if 'run_dir' not in Var:                                                                        
+        import uuid                                                                                 
+        Var.run_dir = os.path.join('/kb/module/work/tmp', str(uuid.uuid4()))                        
+        os.mkdir(Var.run_dir)                                                                       
+                                                                                                    
+    flpth = os.path.join(Var.run_dir, flnm)                                                         
+    with open(flpth, 'w') as f:                                                                     
+        json.dump(obj, f, indent=3)                                                                 
+                                                                                                    
+    if AmpliconSet == True:                                                                         
+        dprint('touch %s' % os.path.join(Var.run_dir, '#' + obj['data'][0]['info'][1]), run='cli') # annotate run_dir with name
+                                                                                                    
+  
 
 
 
@@ -42,9 +59,17 @@ class AmpliconSet:
             'object_refs': [self.upa]
             })
         
+        if Var.debug: write_json(obj, 'get_objects_AmpliconSet.json', AmpliconSet=True)
+
         self.name = obj['data'][0]['info'][1]
         self.obj = obj['data'][0]['data']
         self.amp_mat_upa = self.obj['amplicon_matrix_ref']
+
+
+    @property
+    def ids(self):
+        return list(self.obj['amplicons'].keys())
+
 
 
     def to_fasta(self, fasta_flpth):
@@ -96,10 +121,8 @@ class AmpliconSet:
                 'taxonomy_source': 'rdp',
             }
 
-        if Var.debug:        
+        if Var.debug:
             assert self._is_all_assigned_taxonomy()
-
-
         
     def update_amplicon_matrix_ref(self, amp_mat_upa_new):
         self.obj['amplicon_matrix_ref'] = amp_mat_upa_new
@@ -115,7 +138,6 @@ class AmpliconSet:
                 "type": self.OBJ_TYPE,
                 "data": self.obj,
                 "name": name if name is not None else self.name,
-                #"extra_provenance_input_refs": [self.upa], # don't need if original version is input
              }]
         })[0]
 
@@ -126,7 +148,7 @@ class AmpliconSet:
 
     def _is_all_assigned_taxonomy(self):
         for amplicon_d in self.obj['amplicons'].values():
-            if len(amplicon_d) == 0:
+            if 'lineage' not in amplicon_d['taxonomy'] or 'taxonomy_source' not in amplicon_d['taxonomy']:
                 return False
         return True
 
@@ -144,7 +166,6 @@ class AmpliconMatrix:
         self.upa = upa
 
         self._get_obj()
-        self._get_row_attributemapping_ref()
 
 
     def _get_obj(self):
@@ -152,18 +173,24 @@ class AmpliconMatrix:
             'object_refs': [self.upa]
             })
 
+        if Var.debug: write_json(obj, 'get_objects_AmpliconMatrix.json')
+
         self.name = obj['data'][0]['info'][1]
         self.obj = obj['data'][0]['data']
 
-    def _get_row_attributemapping_ref(self):
-        self.row_attrmap_upa = self.obj.get('row_attributemapping_ref')
-        if self.row_attrmap_upa == None:
+    @property
+    def row_attrmap_upa(self):
+        row_attrmap_upa = self.obj.get('row_attributemapping_ref')
+        if row_attrmap_upa is None:
             msg = (
                 "Input AmpliconSet's AmpliconMatrix does not have a row AttributeMapping to assign traits to. "
                 "A new row AttributeMapping will be created"
             )
-            logging.warning(msg)
-            Var.warnings.append(msg)
+            if msg not in Var.warnings:
+                logging.warning(msg)
+                Var.warnings.append(msg)
+
+        return row_attrmap_upa
 
 
     def update_row_attributemapping_ref(self, row_attrmap_upa_new):
@@ -204,9 +231,10 @@ class AttributeMapping:
         -----
         amp_mat
             required because 
-            (A) If creating self from scratch, need to know `row_ids`
+            (A) If creating self from scratch, need to know `row_ids` and `name`
             (B) AttributeMapping ids >= AmpliconMatrix ids (for row or col)
-                and only a subset of AttributeMapping may be assigned
+                and only a subset of AttributeMapping may be assigned.
+                So you want to know that for testing
         """
         self.upa = upa
         self.amp_mat = amp_mat
@@ -222,6 +250,8 @@ class AttributeMapping:
         obj = Var.dfu.get_objects({
             'object_refs': [self.upa]
             })
+
+        if Var.debug: write_json(obj, 'get_objects_AttributeMapping.json')
 
         self.name = obj['data'][0]['info'][1]
         self.obj = obj['data'][0]['data']
@@ -274,12 +304,13 @@ class AttributeMapping:
 
 
     def update_attribute(self, ind, id2attr_d):
+        '''
+        For updating the taxonomy attribute
+        '''
 
         # fill slots in `instances`
         for id, attr_l in self.obj['instances'].items():
-            attr_l[ind] = id2attr_d.get(id, '')
-
-
+            attr_l[ind] = id2attr_d[id]
 
 
     def save(self, name=None):
@@ -288,10 +319,11 @@ class AttributeMapping:
         obj = {
             "type": self.OBJ_TYPE,
             "data": self.obj,
-            "name": name if name else self.name,
-         }
+            "name": name if name is not None else self.name,
+        }
 
-        if self.upa:
+        # if there is an input row AttributeMapping
+        if self.upa is not None:
             obj["extra_provenance_input_refs"] = [self.upa]
 
         info = Var.dfu.save_objects({ 
@@ -304,7 +336,7 @@ class AttributeMapping:
         return upa_new
 
 
-    def is_tax_populated_looks_normal(self, ind):
+    def _is_tax_populated_looks_normal(self, ind):
         """
         For testing
         Make sure that attribute is present, and all AmpliconSet id's are assigned for
@@ -316,7 +348,10 @@ class AttributeMapping:
         for id, instance in self.obj['instances'].items():
             assert len(instance) == num_attr
             if id in self.amp_mat.obj['data']['row_ids']:
-                assert re.match('(.+;){6}$', instance[ind]), 'attribute is `%s`' % instance[ind]
+                if id in Var.shortSeq_id_l:
+                    assert instance[ind] == ''
+                else:
+                    assert re.match('(.+;){6}$', instance[ind]), 'attribute is `%s`' % instance[ind]
 
         return True
 

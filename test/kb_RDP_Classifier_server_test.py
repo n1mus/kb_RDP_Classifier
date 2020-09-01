@@ -26,7 +26,7 @@ from mocks import * # upas, mocks ...
 ######### TOGGLE PATCH ###############
 ######################################
 ###################################### 
-do_patch = True # toggle patching for tests that can run independently of it
+do_patch = False # toggle patching for tests that can run independently of it
 
 if do_patch:
     patch_ = patch
@@ -278,6 +278,9 @@ class kb_RDP_ClassifierTest(unittest.TestCase):
     ####################
     @patch.dict('kb_RDP_Classifier.util.kbase_obj.Var', values={'dfu': get_mock_dfu('dummy_10by8'), 'warnings': []})
     def test_AmpliconMatrix_wRowAttrMap_AttributeMapping(self):
+        '''
+        Test row AttributeMapping behavior when AmpliconMatrix has row AttributeMapping
+        '''
 
         amp_mat = AmpliconMatrix(dummy_10by8_AmpMat_wRowAttrMap)
         self.assertTrue(len(Var.warnings) == 0)
@@ -343,12 +346,15 @@ class kb_RDP_ClassifierTest(unittest.TestCase):
     ####################
     @patch.dict('kb_RDP_Classifier.util.kbase_obj.Var', values={'dfu': get_mock_dfu('dummy_10by8'), 'warnings': []})
     def test_AmpliconMatrix_noRowAttrMap_AttributeMapping(self):
+        '''
+        Test row AttributeMapping behavior when AmpliconMatrix has now row AttributeMapping
+        '''
 
         amp_mat = AmpliconMatrix(dummy_10by8_AmpMat_noRowAttrMap)
-        self.assertTrue(len(Var.warnings) == 1)
-
-        # create new AttributeMapping obj
         attr_map = AttributeMapping(amp_mat.row_attrmap_upa, amp_mat)
+        attr_map = AttributeMapping(amp_mat.row_attrmap_upa, amp_mat)
+
+        self.assertTrue(len(Var.warnings) == 1, Var.warnings)
 
         ##
         ## write new attribute/source
@@ -415,27 +421,6 @@ class kb_RDP_ClassifierTest(unittest.TestCase):
                 'amplicon_set_upa': _17770,
             })
 
-        params0 = Var.params
-
-        ret = self.serviceImpl.run_classify(
-            self.ctx, {
-                **self.params_ws,
-                'amplicon_set_upa': _17770,
-                'output_name': None,
-                'rdp_clsf': {
-                    'conf': 0.80,
-                    'gene': '16srrna',
-                    'minWords': None,
-                },
-                'write_ampset_taxonomy': 'do_not_overwrite',
-            })
-
-        params1 = Var.params
-
-        self.assertTrue(params0.rdp_prose == params1.rdp_prose)
-        self.assertTrue(params0.cli_args == params1.cli_args)
-
-
     ####################
     ####################
     @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.DataFileUtil', new=lambda *a: get_mock_dfu('17770'))
@@ -459,6 +444,7 @@ class kb_RDP_ClassifierTest(unittest.TestCase):
     ####################
     ####################
     @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.DataFileUtil', new=lambda *a: get_mock_dfu('secret'))
+    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.run_check', new=get_mock_run_check('secret'))
     @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.KBaseReport', new=lambda *a: get_mock_kbr())
     def test_no_taxonomy_or_AttributeMapping_doNotWrite(self):
         ret = self.serviceImpl.run_classify(
@@ -471,6 +457,7 @@ class kb_RDP_ClassifierTest(unittest.TestCase):
     ####################
     ####################
     @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.DataFileUtil', new=lambda *a: get_mock_dfu('secret'))
+    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.run_check', new=get_mock_run_check('secret'))
     @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.KBaseReport', new=lambda *a: get_mock_kbr())
     def test_no_taxonomy_or_AttributeMapping_doNotOverwrite(self):
         ret = self.serviceImpl.run_classify(
@@ -483,6 +470,7 @@ class kb_RDP_ClassifierTest(unittest.TestCase):
     ####################
     ####################
     @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.DataFileUtil', new=lambda *a: get_mock_dfu('secret'))
+    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.run_check', new=get_mock_run_check('secret'))
     @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.KBaseReport', new=lambda *a: get_mock_kbr())
     def test_no_taxonomy_or_AttributeMapping_overwrite(self):
         ret = self.serviceImpl.run_classify(
@@ -492,6 +480,19 @@ class kb_RDP_ClassifierTest(unittest.TestCase):
                 'write_ampset_taxonomy': 'overwrite',
             })
         
+
+    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.DataFileUtil', new=lambda *a: get_mock_dfu('SRS_OTU'))
+    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.run_check', new=get_mock_run_check('SRS_OTU'))
+    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.KBaseReport', new=lambda *a: get_mock_kbr())
+    ###################
+    ###################
+    def test_too_short_seq(self):
+        ret =  self.serviceImpl.run_classify(
+            self.ctx, {
+                **self.params_ws,
+                'amplicon_set_upa': SRS_OTU,
+            })
+
 
 
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -573,15 +574,30 @@ class kb_RDP_ClassifierTest(unittest.TestCase):
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 all_tests = [k for k, v in kb_RDP_ClassifierTest.__dict__.items() if k.startswith('test') and callable(v)]
 
-unit_tests = [
+
+unit_tests = [ # environment and patch-toggling independent
     'test_assert',
     'test_run_check', 'test_parse_filterByConf', 'test_params', 
-    'test_AmpliconSet', 'test_AmpliconMatrix_noRowAttrMap_AttributeMapping', 'test_AmpliconMatrix_wRowAttrMap_AttributeMapping',
+    'test_AmpliconSet',
+    'test_AmpliconMatrix_noRowAttrMap_AttributeMapping', 'test_AmpliconMatrix_wRowAttrMap_AttributeMapping',
+    'test_report'
 ]
-run_tests = ['test_parse_filterByConf']
+ci_tests = [ # integration tests
+    'test',
+    'test_default_params',
+    'test_non_default_params',
+    'test_no_taxonomy_or_AttributeMapping_overwrite',
+    'test_no_taxonomy_or_AttributeMapping_doNotOverwrite',
+    'test_no_taxonomy_or_AttributeMapping_doNotWrite',
+]
+appdev_tests = [ # integration tests
+    'test_too_short_seq',
+]
+
+run_tests = ['test_too_short_seq']
 
 for k, v in kb_RDP_ClassifierTest.__dict__.copy().items():
     if k.startswith('test') and callable(v):
-        if k not in run_tests:
+        if k not in ci_tests:
             delattr(kb_RDP_ClassifierTest, k)
             pass

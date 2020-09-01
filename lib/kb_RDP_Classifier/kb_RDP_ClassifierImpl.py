@@ -54,6 +54,14 @@ def parse_filterByConf(filterByConf_flpth: str, pad_ranks=True) -> dict:
     return id2taxStr_d
 
 
+def parse_shortSeq(shortSeq_flpth: str):
+
+    with open(shortSeq_flpth) as fh:
+        ids = [id.strip() for id in fh.read().strip().splitlines() if len(id.strip()) > 0]
+
+    return ids
+
+
 
 
 #END_HEADER
@@ -109,7 +117,7 @@ class kb_RDP_Classifier:
         # return variables are: output
         #BEGIN run_classify
 
-        logging.info('Entered `run_classify` with params:\n`%s`' % json.dumps(params, indent=3))
+        logging.info('Running `run_classify` with params:\n`%s`' % json.dumps(params, indent=3))
 
 
         #
@@ -238,7 +246,42 @@ class kb_RDP_Classifier:
 
         #
         ##
-        ### add taxStr to AmpliconSet / row AttributeMapping
+        ### extract classifications
+        ####
+        #####
+
+        id2taxStr_d = parse_filterByConf(out_filterByConf_flpth) 
+
+        # get ids of classified and unclassified seqs
+        shortSeq_id_l = parse_shortSeq(out_shortSeq_flpth) # sequences too short to get clsf
+        classified_id_l = list(id2taxStr_d.keys())
+
+        # make sure classifieds and shorts complement
+        if Var.debug:
+            assert sorted(classified_id_l + shortSeq_id_l) == sorted(amp_set.ids)
+
+        # warnings
+        if len(shortSeq_id_l) > 0:
+            msg = (
+                'One or more sequences are too short to be classified. '
+                'See returned .zip for details')
+            logging.warning(msg)
+            Var.warnings.append(msg)
+
+        # add in id->'' for unclassified seqs
+        # so id2taxStr_l is complete
+        # so no KeyErrors later
+        for shortSeq_id in shortSeq_id_l:
+            id2taxStr_d[shortSeq_id] = ''
+
+        # add to globals for testing
+        # hacky?
+        Var.shortSeq_id_l = shortSeq_id_l
+
+
+        #
+        ##
+        ### add classifications to AmpliconSet / row AttributeMapping
         ####
         #####
 
@@ -248,10 +291,6 @@ class kb_RDP_Classifier:
             % (params.rdp_prose['conf'], params.rdp_prose['gene'], params.rdp_prose['minWords'])
         )
         source = 'kb_rdp_classifier/run_classify' # TODO version?
-
-        id2taxStr_d = parse_filterByConf(out_filterByConf_flpth) 
-
-        dprint('id2taxStr_d', 'len(id2taxStr_d)', run=locals(), max_lines=12)
 
         ##
         ## AmpliconSet
@@ -267,6 +306,9 @@ class kb_RDP_Classifier:
 
         ind = row_attrmap.get_attribute_slot(attribute, source)
         row_attrmap.update_attribute(ind, id2taxStr_d)
+
+        if Var.debug:
+            assert row_attrmap._is_tax_populated_looks_normal(ind)
 
             
 
