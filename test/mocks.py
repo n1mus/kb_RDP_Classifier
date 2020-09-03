@@ -116,7 +116,7 @@ def get_mock_dfu(dataset):
     return mock_dfu
 
 
-def get_mock_run_check(dataset):
+def get_mock_run_check(dataset, non_default_gene=False):
     '''
     Avoid expensive runs of tool
     Copy over `Var.out_dir`
@@ -130,8 +130,12 @@ def get_mock_run_check(dataset):
     def mock_run_check_(cmd):
         logging.info('Mocking running cmd `%s`' % cmd)
 
+        ret_dir = 'return'
+        if non_default_gene is not False:
+             ret_dir += '_' + non_default_gene
+
         # test data
-        src_drpth = os.path.join(testData_dir, 'by_dataset_input', dataset, 'return/RDP_Classifier_output')
+        src_drpth = os.path.join(testData_dir, 'by_dataset_input', dataset, ret_dir, 'RDP_Classifier_output')
 
         # check if it already exists
         # since app may create it before run, and

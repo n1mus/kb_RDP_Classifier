@@ -9,6 +9,7 @@ import functools
 import json
 import pandas as pd
 import csv
+import time
 
 from installed_clients.WorkspaceClient import Workspace
 from installed_clients.DataFileUtilClient import DataFileUtil
@@ -26,9 +27,12 @@ from .util.error import *
 
 def run_check(cmd: str): # TODO time it
     logging.info('Running cmd `%s`' % cmd)
+    t0 = time.time() 
     
     # TODO remove shell
     completed_proc = subprocess.run(cmd, shell=True, executable='/bin/bash', stdout=sys.stdout, stderr=sys.stderr)
+
+    logging.info('Took %.2fmin' % ((time.time() - t0)/60))
 
     if completed_proc.returncode != 0:
         raise NonZeroReturnException(
@@ -227,7 +231,7 @@ class kb_RDP_Classifier:
 
         cmd = (  
             'java -Xmx2g -jar %s classify %s ' # custom trained propfiles need bit more memory
-            % (Var.classifierJar_flpth, fasta_flpth) 
+            % (Var.classifier_jar_flpth, fasta_flpth) 
             + ' '.join(params.cli_args)
         )
         
@@ -288,14 +292,14 @@ class kb_RDP_Classifier:
         attribute = (
             'RDP Classifier taxonomy, '
             'conf=%s, gene=%s, minWords=%s' 
-            % (params.rdp_prose['conf'], params.rdp_prose['gene'], params.rdp_prose['minWords'])
+            % (params.prose_args['conf'], params.prose_args['gene'], params.prose_args['minWords'])
         )
         source = 'kb_rdp_classifier/run_classify' # TODO version?
 
         ##
         ## AmpliconSet
 
-        write_setting = params.getd('write_amplicon_set_taxonomy')
+        write_setting = params.getd('write_ampset_taxonomy')
 
         if write_setting != 'do_not_write':
             amp_set.write_taxonomy(id2taxStr_d, write_setting=='overwrite')

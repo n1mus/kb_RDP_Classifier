@@ -1,5 +1,7 @@
 import json
 
+from .dprint import dprint
+from .config import Var
 
 
 
@@ -43,7 +45,7 @@ class Params:
        'write_ampset_taxonomy': 'do_not_overwrite' 
     }
 
-
+    CUSTOM = ['silva_138_ssu']
 
 
     def __init__(self, params):
@@ -69,9 +71,13 @@ class Params:
         # don't allow extraneous params prevent misspelling
         pass
 
+    @property
+    def custom(self) -> bool:
+        return self.getd('gene') in self.CUSTOM
+
 
     @property
-    def rdp_prose(self):
+    def prose_args(self) -> dict:
         '''
         For printing all RDP Clsf params to user in a pretty way
         '''
@@ -96,10 +102,16 @@ class Params:
         cli_args = []
         for p in rdp_params:
             if self.getd(p) != self.DEFAULTS[p]:
+                # different params for 'gene' for custom trainset
+                if p == 'gene' and self.custom:
+                    cli_args.append('--train_propfile')
+                    cli_args.append(Var.propfile[self.params['gene']])
+                    continue
                 cli_args.append('--' + p)
-                cli_args.append(str(self.params[p])) 
+                cli_args.append(str(self.params[p]))
 
         return cli_args
+
 
     def __getitem__(self, key):
         '''
@@ -112,11 +124,15 @@ class Params:
 
     def getd(self, key):
         '''
+        For default-backed params (e.g., tunable numbers)
         Like `get`
-        Return the user-supplied value, or the default value if none was supplied, or None if no default value
+        Return the user-supplied value, or the default value if none was supplied
         '''
-        return self.params.get(key, self.DEFAULTS.get(key))
+        if key not in self.DEFAULTS:
+            raise Exception('`getd` only applicable to params with defaults')
+
+        return self.params.get(key, self.DEFAULTS[key])
 
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return 'Wrapper for params:\n%s' % (json.dumps(self.params, indent=4))

@@ -99,7 +99,7 @@ def do_pie(parser, png_flpth, html_flpth):
     
     fig.update_layout(
         title={
-            'text': 'Assignment Cutoff (bootstrap threshold=%s)' % Var.params.rdp_prose['conf'],
+            'text': 'Assignment Cutoff (bootstrap threshold=%s)' % Var.params.prose_args['conf'],
             'x': 0.5,
         },
         showlegend=False
@@ -153,7 +153,7 @@ def do_histogram(parser, png_flpth, html_flpth):
 ####################################################################################################
 ####################################################################################################
 def do_sunburst(parser, png_flpth, html_flpth):
-    # TODO cut out unassigned branches? - save text/space
+    # TODO cut out unassigned branches? - save text/space? or respect filterByConf info
     # TODO don't show phylum on hover text/label (but keep using it for color)
 
     logging.info('Generating sunburst')
@@ -161,15 +161,15 @@ def do_sunburst(parser, png_flpth, html_flpth):
     df = parser.parse_filterByConf()
     print(df)
 
-    fig = px.sunburst(df, path=df.columns.tolist(), color='phylum')
+    fig = px.sunburst(df, path=df.columns.tolist(), color='phylum', color_discrete_sequence=px.colors.qualitative.Alphabet)
 
     fig.update_layout(
-        title_text='Taxonomic Assignment (bootstrap threshold=%s)' % Var.params.rdp_prose['conf'],
+        title_text='Taxonomic Assignment (bootstrap threshold=%s)' % Var.params.prose_args['conf'],
         title_x=0.5,
     )
 
     fig.write_image(png_flpth, width=900, height=900)
-    fig.write_html(html_flpth)#, default_height=1000) # TODO zoom a little? more color?
+    fig.write_html(html_flpth)#, default_height=1000) # TODO zoom a little?
 
 
 

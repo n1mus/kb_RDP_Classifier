@@ -18,7 +18,7 @@ from kb_RDP_Classifier.util.params import flatten, Params
 from kb_RDP_Classifier.util.kbase_obj import AmpliconSet, AmpliconMatrix, AttributeMapping
 from kb_RDP_Classifier.util.dprint import dprint, where_am_i
 from kb_RDP_Classifier.util.error import * # exceptions 
-from kb_RDP_Classifier.kb_RDP_ClassifierImpl import run_check, parse_filterByConf
+from kb_RDP_Classifier.kb_RDP_ClassifierImpl import run_check, parse_filterByConf, parse_shortSeq
 from mocks import * # upas, mocks ...
 
 ######################################
@@ -38,13 +38,6 @@ else:
 ######################################
 ######################################
 ######################################
-
-
-params_rdp_clsf = {
-    'conf': 0.51,
-    'gene': '16srrna',
-    'minWords': None,
-}
 
 
 
@@ -94,6 +87,11 @@ class kb_RDP_ClassifierTest(unittest.TestCase):
         self.assertTrue(id2taxStr_d['amplicon_id_9'] == 
             'Bacteria;Proteobacteria;Gammaproteobacteria;Legionellales;Coxiellaceae;Aquicella;')
 
+    ####################
+    ####################
+    def test_parse_shortSeq(self):
+        # TODO
+        pass
 
     ####################
     ####################
@@ -138,7 +136,7 @@ class kb_RDP_ClassifierTest(unittest.TestCase):
             'write_ampset_taxonomy': 'do_not_overwrite',
         })
 
-        self.assertTrue(params['amplicon_set_upa'] == '1/2/3' and params.getd('amplicon_set_upa') == '1/2/3')
+        self.assertTrue(params['amplicon_set_upa'] == '1/2/3')
         self.assertTrue(params.getd('output_name') is None)
         self.assertTrue(params.getd('conf') == 0.8)
         self.assertTrue(params.getd('gene') == '16srrna')
@@ -146,12 +144,12 @@ class kb_RDP_ClassifierTest(unittest.TestCase):
         self.assertTrue(params.getd('write_ampset_taxonomy') == 'do_not_overwrite')
 
         self.assertTrue(
-            params.rdp_prose == {
+            params.prose_args == {
                 'conf': '0.8',
                 'gene': '16srrna',
                 'minWords': 'default'
             },
-            json.dumps(params.rdp_prose, indent=4)
+            json.dumps(params.prose_args, indent=4)
         )
         self.assertTrue(params.cli_args == [])
         str(params) # should not throw
@@ -170,7 +168,7 @@ class kb_RDP_ClassifierTest(unittest.TestCase):
             'write_ampset_taxonomy': 'overwrite',
         })
 
-        self.assertTrue(params['amplicon_set_upa'] == '5/5/5' and params.getd('amplicon_set_upa') == '5/5/5')
+        self.assertTrue(params['amplicon_set_upa'] == '5/5/5')
         self.assertTrue(params.getd('output_name') == 'my_ampset')
         self.assertTrue(params.getd('conf') == 0.99999)
         self.assertTrue(params.getd('gene') == 'fungallsu')
@@ -178,12 +176,12 @@ class kb_RDP_ClassifierTest(unittest.TestCase):
         self.assertTrue(params.getd('write_ampset_taxonomy') == 'overwrite')
 
         self.assertTrue(
-            params.rdp_prose == {
+            params.prose_args == {
                 'conf': '0.99999',
                 'gene': 'fungallsu',
                 'minWords': '100'
             },
-            json.dumps(params.rdp_prose, indent=4)
+            json.dumps(params.prose_args, indent=4)
         )
         self.assertTrue(params.cli_args == ['--conf', '0.99999', '--gene', 'fungallsu', '--minWords', '100'], params.cli_args)
         str(params) # should not throw
@@ -196,7 +194,7 @@ class kb_RDP_ClassifierTest(unittest.TestCase):
             'amplicon_set_upa': '6/6/6',
         })
 
-        self.assertTrue(params['amplicon_set_upa'] == '6/6/6' and params.getd('amplicon_set_upa') == '6/6/6')
+        self.assertTrue(params['amplicon_set_upa'] == '6/6/6')
         self.assertTrue(params.getd('output_name') is None)
         self.assertTrue(params.getd('conf') == 0.8)
         self.assertTrue(params.getd('gene') == '16srrna')
@@ -204,12 +202,12 @@ class kb_RDP_ClassifierTest(unittest.TestCase):
         self.assertTrue(params.getd('write_ampset_taxonomy') == 'do_not_overwrite')
 
         self.assertTrue(
-            params.rdp_prose == {
+            params.prose_args == {
                 'conf': '0.8',
                 'gene': '16srrna',
                 'minWords': 'default'
             },
-            json.dumps(params.rdp_prose, indent=4)
+            json.dumps(params.prose_args, indent=4)
         )
         self.assertTrue(params.cli_args == [])
         str(params) # should not throw
@@ -394,6 +392,8 @@ class kb_RDP_ClassifierTest(unittest.TestCase):
 ####################################################################################################
 ##################################### integration tests ############################################
 ####################################################################################################
+    # TODO test params unique to your program
+    # TODO overwrite, do_not_overwrite, do_not_write already enumerated in AmpliconSet unit test
 
     ####################
     ####################
@@ -405,7 +405,11 @@ class kb_RDP_ClassifierTest(unittest.TestCase):
             self.ctx, {
                 **self.params_ws,
                 'amplicon_set_upa': _17770,
-                'rdp_clsf': params_rdp_clsf,
+                'rdp_clsf': {
+                    'conf': 0.51,
+                    'gene': '16srrna',
+                    'minWords': None,
+                    },
             })     
 
 
@@ -493,6 +497,20 @@ class kb_RDP_ClassifierTest(unittest.TestCase):
                 'amplicon_set_upa': SRS_OTU,
             })
 
+    ####################
+    ####################
+    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.DataFileUtil', new=lambda u: get_mock_dfu('17770'))
+    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.run_check', new=get_mock_run_check('17770', non_default_gene='silva_138_ssu'))
+    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.KBaseReport', new=lambda u: get_mock_kbr())
+    def test_custom(self):
+        ret = self.serviceImpl.run_classify(
+            self.ctx, {
+                **self.params_ws,
+                'amplicon_set_upa': _17770,
+                'rdp_clsf': {
+                    'gene': 'silva_138_ssu',
+                },
+            })
 
 
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -589,12 +607,13 @@ ci_tests = [ # integration tests
     'test_no_taxonomy_or_AttributeMapping_overwrite',
     'test_no_taxonomy_or_AttributeMapping_doNotOverwrite',
     'test_no_taxonomy_or_AttributeMapping_doNotWrite',
+    'test_custom',
 ]
 appdev_tests = [ # integration tests
     'test_too_short_seq',
 ]
 
-run_tests = ['test_too_short_seq']
+run_tests = ['test_custom']
 
 for k, v in kb_RDP_ClassifierTest.__dict__.copy().items():
     if k.startswith('test') and callable(v):

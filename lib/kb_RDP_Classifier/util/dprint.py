@@ -17,8 +17,6 @@ subproc_run = functools.partial(
 TAG_WIDTH = 80
 MAX_LINES = 15
 
-# TODO filename -> dutil.py
-
 def dprint(*args, run=False, json=True, where=False, time=False, max_lines=MAX_LINES, exit=False, 
            subproc_run_kwargs={}, print_kwargs={}):
     '''Debug print'''

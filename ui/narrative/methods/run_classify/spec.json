@@ -68,24 +68,16 @@
                 "options": [
                     {
                         "value": "16srrna",
-                        "display": "16srrna",
-                        "id": "16srrna",
-                        "ui-name": "RDP 16srrna"
+                        "display": "16srrna"
                      },{
                         "value": "fungallsu",
-                        "display": "fungallsu",
-                        "id": "fungallsu",
-                        "ui-name": "RDP fungallsu"
+                        "display": "fungallsu"
                     },{
                         "value": "fungalits_warcup",
-                        "display": "fungalits_warcup",
-                        "id": "fungalits_warcup",
-                        "ui-name": "RDP fungalits_warcup"
+                        "display": "fungalits_warcup"
                     },{
                         "value": "fungalits_unite",
-                        "display": "fungalits_unite",
-                        "id": "fungalits_unite",
-                        "ui-name": "RDP fungalits_unite"
+                        "display": "fungalits_unite"
                     }
                 ]
             }
