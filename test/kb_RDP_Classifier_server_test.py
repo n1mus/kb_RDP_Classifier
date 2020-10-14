@@ -394,7 +394,7 @@ class kb_RDP_ClassifierTest(unittest.TestCase):
 
 
     @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.DataFileUtil', new=lambda *a: get_mock_dfu('enigma50by30_noAttrMaps_noSampleSet_tooShortSeqs'))
-    #@patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.run_check', new=get_mock_run_check('enigma50by30_noAttrMaps_noSampleSet_tooShortSeqs'))
+    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.run_check', new=get_mock_run_check('enigma50by30_noAttrMaps_noSampleSet_tooShortSeqs'))
     @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.KBaseReport', new=lambda *a: get_mock_kbr())
     ###################
     ###################
@@ -517,10 +517,10 @@ ci_tests = [ # integration tests
 appdev_tests = [ # integration tests
 ]
 
-run_tests = ['test'] + unit_tests
+run_tests = ['test'] 
 
 for k, v in kb_RDP_ClassifierTest.__dict__.copy().items():
     if k.startswith('test') and callable(v):
         if k not in run_tests:
-            #delattr(kb_RDP_ClassifierTest, k)
+            delattr(kb_RDP_ClassifierTest, k)
             pass
