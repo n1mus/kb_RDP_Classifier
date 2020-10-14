@@ -42,7 +42,6 @@ class Params:
        'conf': 0.8,                 
        'gene': '16srrna',           
        'minWords': None, # null case
-       'write_ampset_taxonomy': 'do_not_overwrite' 
     }
 
     CUSTOM = ['silva_138_ssu']

@@ -14,6 +14,7 @@ RUN apt-get install --yes vim
 
 WORKDIR /opt
 
+# TODO pin this? rn changes with latest release
 RUN curl --location https://sourceforge.net/projects/rdp-classifier/files/latest/download > rdp_classifier.zip && \
 unzip rdp_classifier.zip && \
 rm rdp_classifier.zip

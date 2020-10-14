@@ -15,7 +15,7 @@ from kb_RDP_Classifier.authclient import KBaseAuth as _KBaseAuth
 
 from kb_RDP_Classifier.util.config import Var
 from kb_RDP_Classifier.util.params import flatten, Params
-from kb_RDP_Classifier.util.kbase_obj import AmpliconSet, AmpliconMatrix, AttributeMapping
+from kb_RDP_Classifier.util.kbase_obj import AmpliconMatrix, AttributeMapping
 from kb_RDP_Classifier.util.dprint import dprint, where_am_i
 from kb_RDP_Classifier.util.error import * # exceptions 
 from kb_RDP_Classifier.kb_RDP_ClassifierImpl import run_check, parse_filterByConf, parse_shortSeq
@@ -126,7 +126,7 @@ class kb_RDP_ClassifierTest(unittest.TestCase):
         ## test `Params` defaults
 
         params = Params({
-            'amplicon_set_upa': '1/2/3',
+            'amp_mat_upa': '1/2/3',
             'output_name': None,
             'rdp_clsf': {
                 'conf': 0.8,
@@ -136,12 +136,11 @@ class kb_RDP_ClassifierTest(unittest.TestCase):
             'write_ampset_taxonomy': 'do_not_overwrite',
         })
 
-        self.assertTrue(params['amplicon_set_upa'] == '1/2/3')
+        self.assertTrue(params['amp_mat_upa'] == '1/2/3')
         self.assertTrue(params.getd('output_name') is None)
         self.assertTrue(params.getd('conf') == 0.8)
         self.assertTrue(params.getd('gene') == '16srrna')
         self.assertTrue(params.getd('minWords') is None)
-        self.assertTrue(params.getd('write_ampset_taxonomy') == 'do_not_overwrite')
 
         self.assertTrue(
             params.prose_args == {
@@ -158,7 +157,7 @@ class kb_RDP_ClassifierTest(unittest.TestCase):
         ## test `Params` non-default
 
         params = Params({
-            'amplicon_set_upa': '5/5/5',
+            'amp_mat_upa': '5/5/5',
             'output_name': 'my_ampset',
             'rdp_clsf': {
                 'conf': 0.99999,
@@ -168,12 +167,11 @@ class kb_RDP_ClassifierTest(unittest.TestCase):
             'write_ampset_taxonomy': 'overwrite',
         })
 
-        self.assertTrue(params['amplicon_set_upa'] == '5/5/5')
+        self.assertTrue(params['amp_mat_upa'] == '5/5/5')
         self.assertTrue(params.getd('output_name') == 'my_ampset')
         self.assertTrue(params.getd('conf') == 0.99999)
         self.assertTrue(params.getd('gene') == 'fungallsu')
         self.assertTrue(params.getd('minWords') == 100)
-        self.assertTrue(params.getd('write_ampset_taxonomy') == 'overwrite')
 
         self.assertTrue(
             params.prose_args == {
@@ -191,15 +189,14 @@ class kb_RDP_ClassifierTest(unittest.TestCase):
         ## test `Params` no user-supplied values
 
         params = Params({
-            'amplicon_set_upa': '6/6/6',
+            'amp_mat_upa': '6/6/6',
         })
 
-        self.assertTrue(params['amplicon_set_upa'] == '6/6/6')
+        self.assertTrue(params['amp_mat_upa'] == '6/6/6')
         self.assertTrue(params.getd('output_name') is None)
         self.assertTrue(params.getd('conf') == 0.8)
         self.assertTrue(params.getd('gene') == '16srrna')
         self.assertTrue(params.getd('minWords') is None)
-        self.assertTrue(params.getd('write_ampset_taxonomy') == 'do_not_overwrite')
 
         self.assertTrue(
             params.prose_args == {
@@ -212,64 +209,6 @@ class kb_RDP_ClassifierTest(unittest.TestCase):
         self.assertTrue(params.cli_args == [])
         str(params) # should not throw
 
-    ####################
-    ####################
-    @patch.dict('kb_RDP_Classifier.util.kbase_obj.Var', values={'dfu': get_mock_dfu('dummy_10by8'), 'warnings': []})
-    def test_AmpliconSet(self):
-        Var.run_dir = os.path.join(self.scratch, 'test_AmpliconSet_' + str(uuid.uuid4()))
-        os.mkdir(Var.run_dir)
-
-        ampset = AmpliconSet(dummy_10by8)
-        
-        ##
-        ## test `to_fasta`
-
-        fasta_flpth_test = os.path.join(Var.run_dir, 'study_seqs.fna')
-        fasta_flpth_ref = os.path.join(testData_dir, 'by_dataset_input/dummy_10by8/return/study_seqs.fna')
-        
-        ampset.to_fasta(fasta_flpth_test)
-        
-        with open(fasta_flpth_test) as fh_test, open(fasta_flpth_ref) as fh_ref:
-            self.assertTrue(fh_test.read().strip() == fh_ref.read().strip())
-
-        ##
-        ## test `write_taxonomy`
-
-        filterByConf_flpth = os.path.join(
-            testData_dir, 'by_dataset_input/dummy_10by8/return/RDP_Classifier_output/out_filterByConf.tsv') 
-        id2taxStr_d = parse_filterByConf(filterByConf_flpth)
-
-        # normal write
-        ampset = AmpliconSet(dummy_10by8)
-        ampset.write_taxonomy(id2taxStr_d, overwrite=False)
-        self.assertTrue(Var.warnings == [])
-
-        # normal write
-        ampset = AmpliconSet(dummy_10by8)
-        ampset.write_taxonomy(id2taxStr_d, overwrite=True)
-        self.assertTrue(Var.warnings == [])
-
-        # overwrite
-        ampset = AmpliconSet(dummy_10by8)
-        ampset.write_taxonomy(id2taxStr_d, overwrite=True)
-        ampset.write_taxonomy(id2taxStr_d, overwrite=True)
-        self.assertTrue(len(Var.warnings) == 1)
-        self.assertTrue('`overwrite`' in Var.warnings[-1])
- 
-        # do not overwrite
-        ampset = AmpliconSet(dummy_10by8)
-        ampset.write_taxonomy(id2taxStr_d, overwrite=False)
-        ampset.write_taxonomy(id2taxStr_d, overwrite=False)
-        self.assertTrue(len(Var.warnings) == 2)
-        self.assertTrue('`do_not_overwrite`' in Var.warnings[-1])
- 
-        # do not overwrite
-        ampset = AmpliconSet(dummy_10by8)
-        ampset.obj['amplicons']['amplicon_id_0']['taxonomy'] = {'fake': 'dummy'} 
-        ampset.write_taxonomy(id2taxStr_d, overwrite=False)
-        self.assertTrue(len(Var.warnings) == 3)
-        self.assertTrue('`do_not_overwrite`' in Var.warnings[-1])
- 
 
 
     ####################
@@ -383,28 +322,26 @@ class kb_RDP_ClassifierTest(unittest.TestCase):
 
 
 
+    ####################
+    ####################
     def test_report(self):
-    ####################
-    ####################
         # TODO
         pass
 
 ####################################################################################################
 ##################################### integration tests ############################################
 ####################################################################################################
-    # TODO test params unique to your program
-    # TODO overwrite, do_not_overwrite, do_not_write already enumerated in AmpliconSet unit test
 
     ####################
     ####################
-    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.DataFileUtil', new=lambda u: get_mock_dfu('17770'))
-    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.run_check', new=get_mock_run_check('17770'))
+    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.DataFileUtil', new=lambda u: get_mock_dfu('enigma50by30_noAttrMaps_noSampleSet'))
+    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.run_check', new=get_mock_run_check('enigma50by30_noAttrMaps_noSampleSet'))
     @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.KBaseReport', new=lambda u: get_mock_kbr())
     def test(self):
         ret = self.serviceImpl.run_classify(
             self.ctx, {
                 **self.params_ws,
-                'amplicon_set_upa': _17770,
+                'amp_mat_upa': enigma50by30_noAttrMaps_noSampleSet,
                 'rdp_clsf': {
                     'conf': 0.51,
                     'gene': '16srrna',
@@ -412,81 +349,52 @@ class kb_RDP_ClassifierTest(unittest.TestCase):
                     },
             })     
 
-
     ####################
     ####################
-    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.DataFileUtil', new=lambda *a: get_mock_dfu('17770'))
-    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.run_check', new=get_mock_run_check('17770'))
+    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.DataFileUtil', new=lambda *a: get_mock_dfu('enigma50by30_noAttrMaps_noSampleSet'))
+    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.run_check', new=get_mock_run_check('enigma50by30_noAttrMaps_noSampleSet'))
     @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.KBaseReport', new=lambda *a: get_mock_kbr())
     def test_default_params(self):
         ret = self.serviceImpl.run_classify(
             self.ctx, {
                 **self.params_ws,
-                'amplicon_set_upa': _17770,
+                'amp_mat_upa': enigma50by30_noAttrMaps_noSampleSet,
             })
 
     ####################
     ####################
-    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.DataFileUtil', new=lambda *a: get_mock_dfu('17770'))
-    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.run_check', new=get_mock_run_check('17770'))
+    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.DataFileUtil', new=lambda *a: get_mock_dfu('enigma50by30_noAttrMaps_noSampleSet'))
+    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.run_check', new=get_mock_run_check('enigma50by30_noAttrMaps_noSampleSet'))
     @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.KBaseReport', new=lambda *a: get_mock_kbr())
     def test_non_default_params(self):
         ret = self.serviceImpl.run_classify(
             self.ctx, {
                 **self.params_ws,
-                'amplicon_set_upa': _17770,
+                'amp_mat_upa': enigma50by30_noAttrMaps_noSampleSet,
                 'output_name': 'an_output_name',
                 'rdp_clsf': {
                     'conf': 0.222222222,
                     'gene': 'fungallsu',
                     'minWords': 5,
                 },
-                'write_ampset_taxonomy': 'overwrite',
             })
 
 
     ####################
     ####################
-    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.DataFileUtil', new=lambda *a: get_mock_dfu('secret'))
-    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.run_check', new=get_mock_run_check('secret'))
+    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.DataFileUtil', new=lambda *a: get_mock_dfu('enigma50by30_noAttrMaps_noSampleSet'))
+    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.run_check', new=get_mock_run_check('enigma50by30_noAttrMaps_noSampleSet'))
     @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.KBaseReport', new=lambda *a: get_mock_kbr())
-    def test_no_taxonomy_or_AttributeMapping_doNotWrite(self):
+    def test_no_taxonomy_or_AttributeMapping(self):
         ret = self.serviceImpl.run_classify(
             self.ctx, {
                 **self.params_ws,
-                'amplicon_set_upa': secret,
-                'write_ampset_taxonomy': 'do_not_write',
+                'amp_mat_upa': enigma50by30_noAttrMaps_noSampleSet,
             })
 
-    ####################
-    ####################
-    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.DataFileUtil', new=lambda *a: get_mock_dfu('secret'))
-    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.run_check', new=get_mock_run_check('secret'))
-    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.KBaseReport', new=lambda *a: get_mock_kbr())
-    def test_no_taxonomy_or_AttributeMapping_doNotOverwrite(self):
-        ret = self.serviceImpl.run_classify(
-            self.ctx, {
-                **self.params_ws,
-                'amplicon_set_upa': secret,
-                'write_ampset_taxonomy': 'do_not_overwrite',
-            })
-        
-    ####################
-    ####################
-    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.DataFileUtil', new=lambda *a: get_mock_dfu('secret'))
-    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.run_check', new=get_mock_run_check('secret'))
-    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.KBaseReport', new=lambda *a: get_mock_kbr())
-    def test_no_taxonomy_or_AttributeMapping_overwrite(self):
-        ret = self.serviceImpl.run_classify(
-            self.ctx, {
-                **self.params_ws,
-                'amplicon_set_upa': secret,
-                'write_ampset_taxonomy': 'overwrite',
-            })
-        
 
-    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.DataFileUtil', new=lambda *a: get_mock_dfu('SRS_OTU'))
-    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.run_check', new=get_mock_run_check('SRS_OTU'))
+    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.DataFileUtil', new=lambda *a: get_mock_dfu('enigma50by30_noAttrMaps_noSampleSet_tooShortSeqs'))
+    #@patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.run_check', new=get_mock_run_check('enigma50by30_noAttrMaps_noSampleSet_tooShortSeqs'))
     @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.KBaseReport', new=lambda *a: get_mock_kbr())
     ###################
     ###################
@@ -494,24 +402,23 @@ class kb_RDP_ClassifierTest(unittest.TestCase):
         ret =  self.serviceImpl.run_classify(
             self.ctx, {
                 **self.params_ws,
-                'amplicon_set_upa': SRS_OTU,
+                'amp_mat_upa': enigma50by30_noAttrMaps_noSampleSet_tooShortSeqs,
             })
 
     ####################
     ####################
-    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.DataFileUtil', new=lambda u: get_mock_dfu('17770'))
-    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.run_check', new=get_mock_run_check('17770', non_default_gene='silva_138_ssu'))
+    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.DataFileUtil', new=lambda u: get_mock_dfu('enigma50by30_noAttrMaps_noSampleSet'))
+    #@patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.run_check', new=get_mock_run_check('enigma50by30_noAttrMaps_noSampleSet', non_default_gene='silva_138_ssu'))
     @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.KBaseReport', new=lambda u: get_mock_kbr())
     def test_custom(self):
         ret = self.serviceImpl.run_classify(
             self.ctx, {
                 **self.params_ws,
-                'amplicon_set_upa': _17770,
+                'amp_mat_upa': enigma50by30_noAttrMaps_noSampleSet,
                 'rdp_clsf': {
                     'gene': 'silva_138_ssu',
                 },
             })
-
 
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -596,7 +503,6 @@ all_tests = [k for k, v in kb_RDP_ClassifierTest.__dict__.items() if k.startswit
 unit_tests = [ # environment and patch-toggling independent
     'test_assert',
     'test_run_check', 'test_parse_filterByConf', 'test_params', 
-    'test_AmpliconSet',
     'test_AmpliconMatrix_noRowAttrMap_AttributeMapping', 'test_AmpliconMatrix_wRowAttrMap_AttributeMapping',
     'test_report'
 ]
@@ -604,19 +510,17 @@ ci_tests = [ # integration tests
     'test',
     'test_default_params',
     'test_non_default_params',
-    'test_no_taxonomy_or_AttributeMapping_overwrite',
-    'test_no_taxonomy_or_AttributeMapping_doNotOverwrite',
-    'test_no_taxonomy_or_AttributeMapping_doNotWrite',
+    'test_no_taxonomy_or_AttributeMapping',
     'test_custom',
-]
-appdev_tests = [ # integration tests
     'test_too_short_seq',
 ]
+appdev_tests = [ # integration tests
+]
 
-run_tests = ['test_custom']
+run_tests = ['test'] + unit_tests
 
 for k, v in kb_RDP_ClassifierTest.__dict__.copy().items():
     if k.startswith('test') and callable(v):
-        if k not in ci_tests:
-            delattr(kb_RDP_ClassifierTest, k)
+        if k not in run_tests:
+            #delattr(kb_RDP_ClassifierTest, k)
             pass

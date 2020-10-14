@@ -25,14 +25,14 @@
     ],
     "parameters": [ 
         {
-            "id": "amplicon_set_upa",
+            "id": "amp_mat_upa",
             "optional": false,
             "advanced": false,
             "allow_multiple": false,
             "default_values": [ "" ],
             "field_type": "text",
             "text_options": {
-                "valid_ws_types": [ "KBaseExperiments.AmpliconSet" ]
+                "valid_ws_types": [ "KBaseMatrices.AmpliconMatrix" ]
             }
         },{
             "id": "output_name",
@@ -42,7 +42,7 @@
             "default_values": [ "" ],
             "field_type": "text",
             "text_options": {
-                "valid_ws_type": ["KBaseExperiments.AmpliconSet"],
+                "valid_ws_type": ["KBaseMatrices.AmpliconMatrix"],
                 "is_output_name": true
             }
         },{
@@ -92,27 +92,6 @@
                 "validate_as": "int",
                 "min_int": 5
             }
-        },{
-            "id": "write_ampset_taxonomy",
-            "optional": false,
-            "advanced": true,
-            "allow-multiple": false,
-            "field_type": "dropdown",
-            "dropdown_options": {
-                "options": [
-                    {
-                        "value": "do_not_write",
-                        "display": "do not write"
-                    },{
-                        "value": "do_not_overwrite",
-                        "display": "do not overwrite"
-                    },{
-                        "value": "overwrite",
-                        "display": "overwrite"
-                    }
-                ]
-            },
-            "default_values": ["do_not_overwrite"]
         }
     ],
     "behavior": {
@@ -128,8 +107,8 @@
                     "narrative_system_variable": "workspace_id",
                     "target_property": "workspace_id"
                 },{
-                    "input_parameter": "amplicon_set_upa",
-                    "target_property": "amplicon_set_upa",
+                    "input_parameter": "amp_mat_upa",
+                    "target_property": "amp_mat_upa",
                     "target_type_transform": "resolved-ref"
                 },{
                     "input_parameter": "output_name",
@@ -137,9 +116,6 @@
                 },{
                     "input_parameter": "rdp_clsf",
                     "target_property": "rdp_clsf"
-                },{
-                    "input_parameter": "write_ampset_taxonomy",
-                    "target_property": "write_ampset_taxonomy"
                 }
             ],
             "output_mapping": [

@@ -24,7 +24,7 @@ class GenericsAPI(object):
             password=None, token=None, ignore_authrc=False,
             trust_all_ssl_certificates=False,
             auth_svc='https://ci.kbase.us/services/auth/api/legacy/KBase/Sessions/Login',
-            service_ver='release',
+            service_ver='dev',
             async_job_check_time_ms=100, async_job_check_time_scale_percent=150, 
             async_job_check_max_time_ms=300000):
         if url is None:
@@ -122,7 +122,8 @@ class GenericsAPI(object):
            X/Y/Z style reference), parameter "biochemistry_ref" of type
            "obj_ref" (An X/Y/Z style reference), parameter "reads_set_ref" of
            type "obj_ref" (An X/Y/Z style reference), parameter
-           "sample_set_ref" of type "obj_ref" (An X/Y/Z style reference)
+           "sample_set_ref" of type "obj_ref" (An X/Y/Z style reference),
+           parameter "unit" of String, parameter "type" of String
         :returns: instance of type "ImportMatrixOutput" -> structure:
            parameter "report_name" of String, parameter "report_ref" of
            String, parameter "matrix_obj_ref" of type "obj_ref" (An X/Y/Z
@@ -134,33 +135,31 @@ class GenericsAPI(object):
     def import_matrix_from_biom(self, params, context=None):
         """
         import_matrix_from_biom: import matrix object from BIOM file format
-        :param params: instance of type "ImportMatrixParams" (Input of the
-           import_matrix_from_excel function obj_type: a type in
-           KBaseMatrices input_shock_id: file shock id input_file_path:
-           absolute file path input_staging_file_path: staging area file path
-           matrix_name: matrix object name description: optional, a
-           description of the matrix workspace_name: workspace name matrix
-           object to be saved to optional: col_attributemapping_ref: column
-           AttributeMapping reference row_attributemapping_ref: row
-           AttributeMapping reference genome_ref: genome reference
-           diff_expr_matrix_ref: DifferentialExpressionMatrix reference
-           biochemistry_ref: (for ChemicalAbundanceMatrix) reads_set_ref:
-           (raw data for AmpliconMatrix) sample_set_ref: SampleSet object
-           reference) -> structure: parameter "obj_type" of String, parameter
-           "input_shock_id" of String, parameter "input_file_path" of String,
-           parameter "input_staging_file_path" of String, parameter
-           "matrix_name" of String, parameter "amplicon_set_name" of String,
-           parameter "scale" of String, parameter "description" of String,
-           parameter "workspace_name" of type "workspace_name" (workspace
-           name of the object), parameter "genome_ref" of type "obj_ref" (An
-           X/Y/Z style reference), parameter "col_attributemapping_ref" of
-           type "obj_ref" (An X/Y/Z style reference), parameter
-           "row_attributemapping_ref" of type "obj_ref" (An X/Y/Z style
-           reference), parameter "diff_expr_matrix_ref" of type "obj_ref" (An
-           X/Y/Z style reference), parameter "biochemistry_ref" of type
-           "obj_ref" (An X/Y/Z style reference), parameter "reads_set_ref" of
-           type "obj_ref" (An X/Y/Z style reference), parameter
-           "sample_set_ref" of type "obj_ref" (An X/Y/Z style reference)
+        :param params: instance of type "ImportOTUParams" -> structure:
+           parameter "obj_type" of String, parameter
+           "taxonomic_abundance_tsv" of String, parameter "taxonomic_fasta"
+           of String, parameter "input_local_file" of String, parameter
+           "matrix_name" of String, parameter "scale" of String, parameter
+           "description" of String, parameter "workspace_id" of Long,
+           parameter "genome_ref" of type "obj_ref" (An X/Y/Z style
+           reference), parameter "col_attributemapping_ref" of type "obj_ref"
+           (An X/Y/Z style reference), parameter "row_attributemapping_ref"
+           of type "obj_ref" (An X/Y/Z style reference), parameter
+           "diff_expr_matrix_ref" of type "obj_ref" (An X/Y/Z style
+           reference), parameter "biochemistry_ref" of type "obj_ref" (An
+           X/Y/Z style reference), parameter "reads_set_ref" of type
+           "obj_ref" (An X/Y/Z style reference), parameter "sample_set_ref"
+           of type "obj_ref" (An X/Y/Z style reference), parameter
+           "metadata_keys" of list of String, parameter "extraction_kit" of
+           String, parameter "amplicon_type" of String, parameter
+           "target_gene_region" of String, parameter
+           "forward_primer_sequence" of String, parameter
+           "reverse_primer_sequence" of String, parameter
+           "sequencing_platform" of String, parameter "sequencing_run" of
+           String, parameter "sequencing_kit" of String, parameter
+           "sequencing_quality_filter_cutoff" of String, parameter
+           "clustering_cutoff" of Double, parameter "clustering_method" of
+           String
         :returns: instance of type "ImportMatrixOutput" -> structure:
            parameter "report_name" of String, parameter "report_ref" of
            String, parameter "matrix_obj_ref" of type "obj_ref" (An X/Y/Z
@@ -235,13 +234,119 @@ class GenericsAPI(object):
            "workspace_name" (workspace name of the object), parameter
            "with_mean" of type "boolean" (A boolean - 0 for false, 1 for
            true.), parameter "with_std" of type "boolean" (A boolean - 0 for
-           false, 1 for true.), parameter "new_matrix_name" of String
+           false, 1 for true.), parameter "dimension" of String, parameter
+           "new_matrix_name" of String
         :returns: instance of type "StandardizeMatrixOutput" -> structure:
            parameter "report_name" of String, parameter "report_ref" of
            String, parameter "new_matrix_obj_ref" of type "obj_ref" (An X/Y/Z
            style reference)
         """
         return self._client.run_job('GenericsAPI.standardize_matrix',
+                                    [params], self._service_ver, context)
+
+    def transform_matrix(self, params, context=None):
+        """
+        :param params: instance of type "TransformMatrixParams" -> structure:
+           parameter "input_matrix_ref" of type "obj_ref" (An X/Y/Z style
+           reference), parameter "workspace_id" of Long, parameter
+           "new_matrix_name" of String, parameter "operations" of list of
+           String, parameter "abundance_filtering_params" of mapping from
+           String to String, parameter "relative_abundance_params" of mapping
+           from String to String, parameter "standardization_params" of
+           mapping from String to String, parameter
+           "ratio_transformation_params" of mapping from String to String,
+           parameter "log_params" of mapping from String to Double
+        :returns: instance of type "TransformMatrixOutput" -> structure:
+           parameter "report_name" of String, parameter "report_ref" of
+           String, parameter "new_matrix_obj_ref" of type "obj_ref" (An X/Y/Z
+           style reference)
+        """
+        return self._client.run_job('GenericsAPI.transform_matrix',
+                                    [params], self._service_ver, context)
+
+    def perform_rarefy(self, params, context=None):
+        """
+        :param params: instance of type "RarefyMatrixParams" -> structure:
+           parameter "input_matrix_ref" of type "obj_ref" (An X/Y/Z style
+           reference), parameter "workspace_id" of Long, parameter
+           "new_matrix_name" of String, parameter "seed_number" of Long,
+           parameter "dimension" of String, parameter "subsample_size" of
+           Long, parameter "bootstrap" of type "RarefyBootstrapParams" ->
+           structure: parameter "num_rare_reps" of Long, parameter
+           "central_tendency" of String
+        :returns: instance of type "RarefyMatrixOutput" -> structure:
+           parameter "report_name" of String, parameter "report_ref" of
+           String, parameter "new_matrix_obj_ref" of type "obj_ref" (An X/Y/Z
+           style reference)
+        """
+        return self._client.run_job('GenericsAPI.perform_rarefy',
+                                    [params], self._service_ver, context)
+
+    def process_taxonomic_str(self, params, context=None):
+        """
+        parse user's input taxonomic string into a standardized syntax (ideally, a 7 slot string)
+        general rules:
+            1. return original string if we cannot find a pattern to parse
+            2. return original string if user's taxonomic string has 8 or more than 8 slots
+               (string with replaced delimiters (e.g. commas replaced with semicolons))
+            3. append trailing semicolon (if missing) if user's taxonomic string has 6 slots
+            4. prepend genus name to species epithet IF missing (when s is specified or length = 7)
+            5. start parsed taxonomic string with one of:
+               Bacteria, Archaea, Viridae, Eukaryota; Virus; Eukarya; Viruses
+        :param params: instance of type "ProcessTaxonomicStrParams" ->
+           structure: parameter "taxonomic_str" of String
+        :returns: instance of type "ProcessTaxonomicStrOutput" -> structure:
+           parameter "origin_taxonomic_str" of String, parameter
+           "processed_taxonomic_str" of String
+        """
+        return self._client.run_job('GenericsAPI.process_taxonomic_str',
+                                    [params], self._service_ver, context)
+
+    def perform_variable_stats_matrix(self, params, context=None):
+        """
+        :param params: instance of type "VariableStatsParams" -> structure:
+           parameter "input_matrix_ref" of type "obj_ref" (An X/Y/Z style
+           reference), parameter "attribute_mapping_obj_ref" of type
+           "obj_ref" (An X/Y/Z style reference), parameter "workspace_id" of
+           Long, parameter "dist_metric" of String, parameter "dimension" of
+           String, parameter "grouping" of String, parameter "permutations"
+           of Long, parameter "perform_anosim" of type "boolean" (A boolean -
+           0 for false, 1 for true.), parameter "perform_permanova" of type
+           "boolean" (A boolean - 0 for false, 1 for true.), parameter
+           "perform_permdisp" of type "boolean" (A boolean - 0 for false, 1
+           for true.)
+        :returns: instance of type "VariableStatsOutput" -> structure:
+           parameter "report_name" of String, parameter "report_ref" of String
+        """
+        return self._client.run_job('GenericsAPI.perform_variable_stats_matrix',
+                                    [params], self._service_ver, context)
+
+    def perform_simper(self, params, context=None):
+        """
+        :param params: instance of type "SimperParams" -> structure:
+           parameter "input_matrix_ref" of type "obj_ref" (An X/Y/Z style
+           reference), parameter "attribute_mapping_obj_ref" of type
+           "obj_ref" (An X/Y/Z style reference), parameter "workspace_id" of
+           Long, parameter "dimension" of String, parameter "grouping" of
+           String, parameter "permutations" of Long
+        :returns: instance of type "SimperOutput" -> structure: parameter
+           "report_name" of String, parameter "report_ref" of String
+        """
+        return self._client.run_job('GenericsAPI.perform_simper',
+                                    [params], self._service_ver, context)
+
+    def perform_mantel_test(self, params, context=None):
+        """
+        :param params: instance of type "MantelTestParams" -> structure:
+           parameter "input_matrix_refs" of list of type "obj_ref" (An X/Y/Z
+           style reference), parameter "workspace_id" of Long, parameter
+           "dist_metric" of String, parameter "dimension" of String,
+           parameter "correlation_method" of String, parameter "permutations"
+           of Long, parameter "alternative_hypothesis" of String
+        :returns: instance of type "MantelTestOutput" -> structure: parameter
+           "report_name" of String, parameter "report_ref" of String
+        """
+        return self._client.run_job('GenericsAPI.perform_mantel_test',
                                     [params], self._service_ver, context)
 
     def file_to_attribute_mapping(self, params, context=None):
@@ -486,6 +591,29 @@ class GenericsAPI(object):
         """
         return self._client.run_job('GenericsAPI.view_matrix',
                                     [params], self._service_ver, context)
+
+    def build_chemical_abundance_template(self, params, context=None):
+        """
+        :param params: instance of type "ChemAbunTempParams" -> structure:
+           parameter "workspace_name" of String, parameter "workspace_id" of
+           Long, parameter "sample_set_ref" of type "obj_ref" (An X/Y/Z style
+           reference), parameter "chemical_data_included" of mapping from
+           String to Long, parameter "chemical_ids_included" of mapping from
+           String to Long
+        :returns: instance of type "ViewMatrixOutput" -> structure: parameter
+           "report_name" of String, parameter "report_ref" of String
+        """
+        return self._client.run_job('GenericsAPI.build_chemical_abundance_template',
+                                    [params], self._service_ver, context)
+
+    def fetch_sequence(self, matrix_ref, context=None):
+        """
+        :param matrix_ref: instance of type "obj_ref" (An X/Y/Z style
+           reference)
+        :returns: instance of String
+        """
+        return self._client.run_job('GenericsAPI.fetch_sequence',
+                                    [matrix_ref], self._service_ver, context)
 
     def status(self, context=None):
         return self._client.run_job('GenericsAPI.status',

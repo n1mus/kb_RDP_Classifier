@@ -10,16 +10,18 @@ import json
 import pandas as pd
 import csv
 import time
+import shutil
 
 from installed_clients.WorkspaceClient import Workspace
 from installed_clients.DataFileUtilClient import DataFileUtil
 from installed_clients.KBaseReportClient import KBaseReport
+from installed_clients.GenericsAPIClient import GenericsAPI
 
 from .util.params import Params
 from .util.report import HTMLReportWriter
 from .util.dprint import dprint
 from .util.config import reset_Var, Var
-from .util.kbase_obj import AmpliconSet, AmpliconMatrix, AttributeMapping
+from .util.kbase_obj import  AmpliconMatrix, AttributeMapping
 from .util.error import *
 
 
@@ -171,6 +173,7 @@ class kb_RDP_Classifier:
             'run_dir': os.path.join(self.shared_folder, 'run_kb_rdp_classifier_' + str(uuid.uuid4())),
             'dfu': DataFileUtil(self.callback_url),
             'ws': Workspace(self.workspace_url),
+            'gapi': GenericsAPI(self.callback_url, service_ver='dev'),
             'kbr': KBaseReport(self.callback_url),
             'warnings': [],
         })
@@ -198,21 +201,22 @@ class kb_RDP_Classifier:
         ####
         #####
 
-
-        # input object, which has the amplicons
-        amp_set = AmpliconSet(params['amplicon_set_upa'])
-
         # intermediate referenced
-        amp_mat = AmpliconMatrix(amp_set.amp_mat_upa)
+        amp_mat = AmpliconMatrix(params['amp_mat_upa'])
 
         # if `row_attrmap_upa` == None, 
         # create new row AttributeMapping object 
         # from amp_mat.obj['data']['row_ids']
         row_attrmap = AttributeMapping(upa=amp_mat.row_attrmap_upa, amp_mat=amp_mat)  
 
-        dprint('params["amplicon_set_upa"]', 'amp_set.amp_mat_upa', 'amp_mat.row_attrmap_upa', run=locals())
+        dprint('amp_mat.row_attrmap_upa', run=locals())
 
 
+        # testing
+        Var.update(dict(
+            amp_mat=amp_mat,
+            row_attrmap=row_attrmap,
+        ))
 
 
         #
@@ -227,7 +231,7 @@ class kb_RDP_Classifier:
         out_fixRank_flpth = os.path.join(Var.out_dir, 'out_fixRank.tsv')
         out_shortSeq_flpth = os.path.join(Var.out_dir, 'out_unclassifiedShortSeqs.txt') # seqs too short to classify
 
-        amp_set.to_fasta(fasta_flpth)
+        shutil.copyfile(amp_mat.get_fasta(), fasta_flpth)
 
         cmd = (  
             'java -Xmx2g -jar %s classify %s ' # custom trained propfiles need bit more memory
@@ -262,7 +266,7 @@ class kb_RDP_Classifier:
 
         # make sure classifieds and shorts complement
         if Var.debug:
-            assert sorted(classified_id_l + shortSeq_id_l) == sorted(amp_set.ids)
+            assert sorted(classified_id_l + shortSeq_id_l) == sorted(amp_mat.obj['data']['row_ids'])
 
         # warnings
         if len(shortSeq_id_l) > 0:
@@ -285,7 +289,7 @@ class kb_RDP_Classifier:
 
         #
         ##
-        ### add classifications to AmpliconSet / row AttributeMapping
+        ### add classifications to row AttributeMapping
         ####
         #####
 
@@ -297,24 +301,13 @@ class kb_RDP_Classifier:
         source = 'kb_rdp_classifier/run_classify' # TODO version?
 
         ##
-        ## AmpliconSet
-
-        write_setting = params.getd('write_ampset_taxonomy')
-
-        if write_setting != 'do_not_write':
-            amp_set.write_taxonomy(id2taxStr_d, write_setting=='overwrite')
-
-
-        ##
         ## row AttributeMapping
 
         ind = row_attrmap.get_attribute_slot(attribute, source)
         row_attrmap.update_attribute(ind, id2taxStr_d)
 
-        if Var.debug:
-            assert row_attrmap._is_tax_populated_looks_normal(ind)
-
-            
+        #if Var.debug: TODO move to test
+        #    assert row_attrmap._is_tax_populated_looks_normal(ind)
 
 
 
@@ -329,13 +322,9 @@ class kb_RDP_Classifier:
         amp_mat.update_row_attributemapping_ref(row_attrmap_upa_new)
         amp_mat_upa_new = amp_mat.save()
 
-        amp_set.update_amplicon_matrix_ref(amp_mat_upa_new)
-        amp_set_upa_new = amp_set.save(name=params.getd('output_name'))
-
         objects_created = [
             {'ref': row_attrmap_upa_new, 'description': 'Added or updated attribute `%s`' % attribute},
             {'ref': amp_mat_upa_new, 'description': 'Updated row AttributeMapping reference'},
-            {'ref': amp_set_upa_new, 'description': 'Updated AmpliconMatrix reference'},
         ]
 
 

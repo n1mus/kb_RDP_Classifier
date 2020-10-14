@@ -5,7 +5,7 @@
 }, {
   "module_name" : "GenericsAPI",
   "type" : "sdk",
-  "version_tag" : "release"
+  "version_tag" : "dev"
 }, {
   "module_name" : "KBaseReport",
   "type" : "sdk",
