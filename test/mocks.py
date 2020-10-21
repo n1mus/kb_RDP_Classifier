@@ -28,6 +28,8 @@ testData_dir = '/kb/module/test/data'
 enigma50by30_noAttrMaps_noSampleSet = '55136/4/1'
 enigma50by30_noAttrMaps_noSampleSet_tooShortSeqs = '55136/6/1'
 
+enigma50by30 = '55136/15/1'
+enigma50by30_rowAttrMap = '55136/11/1'
 
 ####################################################################################################
 ############################### appdev #############################################################
@@ -87,6 +89,8 @@ def get_mock_dfu(dataset):
         flnm = {
             enigma50by30_noAttrMaps_noSampleSet: 'AmpliconMatrix.json',
             enigma50by30_noAttrMaps_noSampleSet_tooShortSeqs: 'AmpliconMatrix.json',
+            enigma50by30: 'AmpliconMatrix.json',
+            enigma50by30_rowAttrMap: 'row_AttributeMapping.json',
             dummy_10by8_AmpMat_wRowAttrMap: 'get_objects_AmpliconMatrix_wRowAttrMap.json',
             dummy_10by8_AmpMat_noRowAttrMap: 'get_objects_AmpliconMatrix_noRowAttrMap.json',
             dummy_10by8_AttrMap: 'get_objects_AttributeMapping.json',

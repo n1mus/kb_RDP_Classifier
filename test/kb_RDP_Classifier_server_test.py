@@ -350,53 +350,34 @@ class kb_RDP_ClassifierTest(unittest.TestCase):
 
     def _check_objects(self):
         self.assertTrue(Var.amp_mat.obj.get('row_attributemapping_ref') is not None)
+        self.assertTrue(Var.amp_mat.obj.get('row_mapping') is not None)
 
 
     ####################
     ####################
-    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.DataFileUtil', new=lambda *a, **k: get_mock_dfu('enigma50by30_noAttrMaps_noSampleSet'))
-    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.GenericsAPI', new=lambda *a, **k: get_mock_gapi('enigma50by30_noAttrMaps_noSampleSet'))
-    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.run_check', new=get_mock_run_check('enigma50by30_noAttrMaps_noSampleSet'))
-    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.KBaseReport', new=lambda *a, **k: get_mock_kbr())
-    def test(self):
-        ret = self.serviceImpl.run_classify(
-            self.ctx, {
-                **self.params_ws,
-                'amp_mat_upa': enigma50by30_noAttrMaps_noSampleSet,
-                'rdp_clsf': {
-                    'conf': 0.51,
-                    'gene': '16srrna',
-                    'minWords': None,
-                    },
-            })     
-
-        self._check_objects()
-
-    ####################
-    ####################
-    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.DataFileUtil', new=lambda *a: get_mock_dfu('enigma50by30_noAttrMaps_noSampleSet'))
-    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.GenericsAPI', new=lambda *a, **k: get_mock_gapi('enigma50by30_noAttrMaps_noSampleSet'))
-    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.run_check', new=get_mock_run_check('enigma50by30_noAttrMaps_noSampleSet'))
+    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.DataFileUtil', new=lambda *a: get_mock_dfu('enigma50by30'))
+    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.GenericsAPI', new=lambda *a, **k: get_mock_gapi('enigma50by30'))
+    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.run_check', new=get_mock_run_check('enigma50by30'))
     @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.KBaseReport', new=lambda *a: get_mock_kbr())
     def test_default_params(self):
         ret = self.serviceImpl.run_classify(
             self.ctx, {
                 **self.params_ws,
-                'amp_mat_upa': enigma50by30_noAttrMaps_noSampleSet,
+                'amp_mat_upa': enigma50by30,
             })
         self._check_objects()
 
     ####################
     ####################
-    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.DataFileUtil', new=lambda *a: get_mock_dfu('enigma50by30_noAttrMaps_noSampleSet'))
-    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.GenericsAPI', new=lambda *a, **k: get_mock_gapi('enigma50by30_noAttrMaps_noSampleSet'))
-    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.run_check', new=get_mock_run_check('enigma50by30_noAttrMaps_noSampleSet'))
+    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.DataFileUtil', new=lambda *a: get_mock_dfu('enigma50by30'))
+    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.GenericsAPI', new=lambda *a, **k: get_mock_gapi('enigma50by30'))
+    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.run_check', new=get_mock_run_check('enigma50by30'))
     @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.KBaseReport', new=lambda *a: get_mock_kbr())
     def test_non_default_params(self):
         ret = self.serviceImpl.run_classify(
             self.ctx, {
                 **self.params_ws,
-                'amp_mat_upa': enigma50by30_noAttrMaps_noSampleSet,
+                'amp_mat_upa': enigma50by30,
                 'output_name': 'an_output_name',
                 'rdp_clsf': {
                     'conf': 0.222222222,
@@ -405,6 +386,7 @@ class kb_RDP_ClassifierTest(unittest.TestCase):
                 },
             })
 
+        self._check_objects()
 
     ####################
     ####################
@@ -433,6 +415,7 @@ class kb_RDP_ClassifierTest(unittest.TestCase):
                 **self.params_ws,
                 'amp_mat_upa': enigma50by30_noAttrMaps_noSampleSet_tooShortSeqs,
             })
+        self._check_objects()
 
     ####################
     ####################
@@ -449,6 +432,7 @@ class kb_RDP_ClassifierTest(unittest.TestCase):
                     'gene': 'silva_138_ssu',
                 },
             })
+        self._check_objects()
 
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -538,7 +522,6 @@ unit_tests = [ # environment and patch-toggling independent
     'test_report'
 ]
 ci_tests = [ # integration tests
-    'test',
     'test_default_params',
     'test_non_default_params',
     'test_no_taxonomy_or_AttributeMapping',
@@ -548,10 +531,10 @@ ci_tests = [ # integration tests
 appdev_tests = [ # integration tests
 ]
 
-run_tests = ['test_custom'] 
+run_tests = ['test_default_params', 'test_non_default_params'] 
 
 for k, v in kb_RDP_ClassifierTest.__dict__.copy().items():
     if k.startswith('test') and callable(v):
-        if k not in run_tests:
+        if k not in ci_tests:
             delattr(kb_RDP_ClassifierTest, k)
             pass
