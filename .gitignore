@@ -3,6 +3,5 @@ sdk.cfg
 .*.sw[a-z]
 *.py.bak*
 tmp
-by_dataset_input/
-data/
+test/data/
 __pycache__/

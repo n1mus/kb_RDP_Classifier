@@ -42,8 +42,8 @@ class AmpliconMatrix:
         self.name = obj['data'][0]['info'][1]
         self.obj = obj['data'][0]['data']
 
-        if Var.debug is True:                                                                         
-            dprint('touch %s' % os.path.join(Var.run_dir, '#' + self.name), run='cli') # annotate run_dir with name
+        # debug annotate run_dir with name
+        dprint('touch %s' % os.path.join(Var.run_dir, '#' + self.name), run='cli') 
 
     def get_fasta(self):
         dprint('self.upa', run=locals())
