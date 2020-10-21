@@ -223,7 +223,7 @@ class kb_RDP_Classifier:
 
         amp_mat = AmpliconMatrix(params['amp_mat_upa'])
 
-        row_attr_map_upa = amp_mat.obj.get('row_attributemapping_upa')
+        row_attr_map_upa = amp_mat.obj.get('row_attributemapping_ref')
         if row_attr_map_upa is None:
             msg = (
                 "Input AmpliconMatrix does not have a row AttributeMapping to assign traits to. "
