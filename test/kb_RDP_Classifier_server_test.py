@@ -26,7 +26,7 @@ from mocks import * # upas, mocks ...
 ######### TOGGLE PATCH ###############
 ######################################
 ###################################### 
-do_patch = False # toggle patching for tests that can run independently of it
+do_patch = True # toggle patching for tests that can run independently of it
 
 if do_patch:
     patch_ = patch
@@ -124,90 +124,106 @@ class kb_RDP_ClassifierTest(unittest.TestCase):
 
         ##
         ## test `Params` defaults
+        with self.subTest('defaults'):
 
-        params = Params({
-            'amp_mat_upa': '1/2/3',
-            'output_name': None,
-            'rdp_clsf': {
-                'conf': 0.8,
-                'gene': '16srrna',
-                'minWords': None,
-            },
-            'write_ampset_taxonomy': 'do_not_overwrite',
-        })
+            params = Params({
+                'amp_mat_upa': '1/2/3',
+                'output_name': None,
+                'rdp_clsf': {
+                    'conf': 0.8,
+                    'gene': 'silva_138_ssu',
+                    'minWords': None,
+                },
+            })
 
-        self.assertTrue(params['amp_mat_upa'] == '1/2/3')
-        self.assertTrue(params.getd('output_name') is None)
-        self.assertTrue(params.getd('conf') == 0.8)
-        self.assertTrue(params.getd('gene') == '16srrna')
-        self.assertTrue(params.getd('minWords') is None)
+            self.assertTrue(params['amp_mat_upa'] == '1/2/3')
+            self.assertTrue(params.getd('output_name') is None)
+            self.assertTrue(params.getd('conf') == 0.8)
+            self.assertTrue(params.getd('gene') == 'silva_138_ssu')
+            self.assertTrue(params.getd('minWords') is None)
 
-        self.assertTrue(
-            params.prose_args == {
-                'conf': '0.8',
-                'gene': '16srrna',
-                'minWords': 'default'
-            },
-            json.dumps(params.prose_args, indent=4)
-        )
-        self.assertTrue(params.cli_args == [])
-        str(params) # should not throw
+            self.assertTrue(
+                params.prose_args == {
+                    'conf': '0.8',
+                    'gene': 'silva_138_ssu',
+                    'minWords': 'default'
+                },
+                json.dumps(params.prose_args, indent=4)
+            )
+            self.assertTrue(params.cli_args == [
+                '--train_propfile', 
+                '/kb/module/data/SILVA_138_SSU_NR_99/rRNAClassifier.properties'
+                ],
+                params.cli_args
+            )
+            str(params) # should not throw
 
         ##
         ## test `Params` non-default
+        with self.subTest('non-default'):
 
-        params = Params({
-            'amp_mat_upa': '5/5/5',
-            'output_name': 'my_ampset',
-            'rdp_clsf': {
-                'conf': 0.99999,
-                'gene': 'fungallsu',
-                'minWords': 100,
-            },
-            'write_ampset_taxonomy': 'overwrite',
-        })
+            params = Params({
+                'amp_mat_upa': '5/5/5',
+                'output_name': 'my_ampset',
+                'rdp_clsf': {
+                    'conf': 0.99999,
+                    'gene': 'fungallsu',
+                    'minWords': 100,
+                },
+            })
 
-        self.assertTrue(params['amp_mat_upa'] == '5/5/5')
-        self.assertTrue(params.getd('output_name') == 'my_ampset')
-        self.assertTrue(params.getd('conf') == 0.99999)
-        self.assertTrue(params.getd('gene') == 'fungallsu')
-        self.assertTrue(params.getd('minWords') == 100)
+            self.assertTrue(params['amp_mat_upa'] == '5/5/5')
+            self.assertTrue(params.getd('output_name') == 'my_ampset')
+            self.assertTrue(params.getd('conf') == 0.99999)
+            self.assertTrue(params.getd('gene') == 'fungallsu')
+            self.assertTrue(params.getd('minWords') == 100)
 
-        self.assertTrue(
-            params.prose_args == {
-                'conf': '0.99999',
-                'gene': 'fungallsu',
-                'minWords': '100'
-            },
-            json.dumps(params.prose_args, indent=4)
-        )
-        self.assertTrue(params.cli_args == ['--conf', '0.99999', '--gene', 'fungallsu', '--minWords', '100'], params.cli_args)
-        str(params) # should not throw
+            self.assertTrue(
+                params.prose_args == {
+                    'conf': '0.99999',
+                    'gene': 'fungallsu',
+                    'minWords': '100'
+                },
+                json.dumps(params.prose_args, indent=4)
+            )
+            self.assertTrue(
+                params.cli_args == [
+                    '--conf', '0.99999', '--gene', 'fungallsu', '--minWords', '100'
+                ], 
+                params.cli_args
+            )
+            str(params) # should not throw
 
 
         ##
         ## test `Params` no user-supplied values
+        with self.subTest('no user-supplied values'):
 
-        params = Params({
-            'amp_mat_upa': '6/6/6',
-        })
+            params = Params({
+                'amp_mat_upa': '6/6/6',
+            })
 
-        self.assertTrue(params['amp_mat_upa'] == '6/6/6')
-        self.assertTrue(params.getd('output_name') is None)
-        self.assertTrue(params.getd('conf') == 0.8)
-        self.assertTrue(params.getd('gene') == '16srrna')
-        self.assertTrue(params.getd('minWords') is None)
+            self.assertTrue(params['amp_mat_upa'] == '6/6/6')
+            self.assertTrue(params.getd('output_name') is None)
+            self.assertTrue(params.getd('conf') == 0.8)
+            self.assertTrue(params.getd('gene') == 'silva_138_ssu')
+            self.assertTrue(params.getd('minWords') is None)
 
-        self.assertTrue(
-            params.prose_args == {
-                'conf': '0.8',
-                'gene': '16srrna',
-                'minWords': 'default'
-            },
-            json.dumps(params.prose_args, indent=4)
-        )
-        self.assertTrue(params.cli_args == [])
-        str(params) # should not throw
+            self.assertTrue(
+                params.prose_args == {
+                    'conf': '0.8',
+                    'gene': 'silva_138_ssu',
+                    'minWords': 'default'
+                },
+                json.dumps(params.prose_args, indent=4)
+            )
+            self.assertTrue(params.cli_args == [
+                '--train_propfile', 
+                '/kb/module/data/SILVA_138_SSU_NR_99/rRNAClassifier.properties'
+                ],
+                params.cli_args
+            )
+            str(params) # should not throw
 
 
 
@@ -217,16 +233,17 @@ class kb_RDP_ClassifierTest(unittest.TestCase):
     def test_AmpliconMatrix_wRowAttrMap_AttributeMapping(self):
         '''
         Test row AttributeMapping behavior when AmpliconMatrix has row AttributeMapping
+        Row AttributeMapping indices should be in sync with AmpliconMatrix indices (1 to 1)
         '''
 
         amp_mat = AmpliconMatrix(dummy_10by8_AmpMat_wRowAttrMap)
         self.assertTrue(len(Var.warnings) == 0)
 
-        attr_map = AttributeMapping(amp_mat.row_attrmap_upa, amp_mat)
+        attr_map = AttributeMapping(amp_mat.obj.get('row_attributemapping_ref'), amp_mat)
 
         ##
         ## write new attribute/source
-        ind_0 = attr_map.get_attribute_slot('biome', 'testing')
+        ind_0 = attr_map.get_attribute_slot_warn('biome', 'testing')
         self.assertTrue(ind_0 == 2)
         self.assertTrue(len(Var.warnings) == 0)
 
@@ -247,7 +264,7 @@ class kb_RDP_ClassifierTest(unittest.TestCase):
 
         ##
         ## overwrite attribute/source
-        ind_1 = attr_map.get_attribute_slot('celestial body', 'upload')
+        ind_1 = attr_map.get_attribute_slot_warn('celestial body', 'upload')
         self.assertTrue(ind_1 == 0)
         self.assertTrue(len(Var.warnings) == 1)
 
@@ -281,21 +298,20 @@ class kb_RDP_ClassifierTest(unittest.TestCase):
  
     ####################
     ####################
-    @patch.dict('kb_RDP_Classifier.util.kbase_obj.Var', values={'dfu': get_mock_dfu('dummy_10by8'), 'warnings': []})
+    @patch.dict('kb_RDP_Classifier.util.kbase_obj.Var', values={'dfu': get_mock_dfu('dummy_10by8'), 'warnings': ['start']})
     def test_AmpliconMatrix_noRowAttrMap_AttributeMapping(self):
         '''
         Test row AttributeMapping behavior when AmpliconMatrix has now row AttributeMapping
         '''
 
         amp_mat = AmpliconMatrix(dummy_10by8_AmpMat_noRowAttrMap)
-        attr_map = AttributeMapping(amp_mat.row_attrmap_upa, amp_mat)
-        attr_map = AttributeMapping(amp_mat.row_attrmap_upa, amp_mat)
+        attr_map = AttributeMapping(amp_mat.obj.get('row_attributemapping_ref'), amp_mat)
 
         self.assertTrue(len(Var.warnings) == 1, Var.warnings)
 
         ##
         ## write new attribute/source
-        ind_0 = attr_map.get_attribute_slot('biome', 'testing')
+        ind_0 = attr_map.get_attribute_slot_warn('biome', 'testing')
         self.assertTrue(ind_0 == 0)
         self.assertTrue(len(Var.warnings) == 1)
 
@@ -332,11 +348,16 @@ class kb_RDP_ClassifierTest(unittest.TestCase):
 ##################################### integration tests ############################################
 ####################################################################################################
 
+    def _check_objects(self):
+        self.assertTrue(Var.amp_mat.obj.get('row_attributemapping_ref') is not None)
+
+
     ####################
     ####################
-    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.DataFileUtil', new=lambda u: get_mock_dfu('enigma50by30_noAttrMaps_noSampleSet'))
+    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.DataFileUtil', new=lambda *a, **k: get_mock_dfu('enigma50by30_noAttrMaps_noSampleSet'))
+    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.GenericsAPI', new=lambda *a, **k: get_mock_gapi('enigma50by30_noAttrMaps_noSampleSet'))
     @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.run_check', new=get_mock_run_check('enigma50by30_noAttrMaps_noSampleSet'))
-    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.KBaseReport', new=lambda u: get_mock_kbr())
+    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.KBaseReport', new=lambda *a, **k: get_mock_kbr())
     def test(self):
         ret = self.serviceImpl.run_classify(
             self.ctx, {
@@ -349,9 +370,12 @@ class kb_RDP_ClassifierTest(unittest.TestCase):
                     },
             })     
 
+        self._check_objects()
+
     ####################
     ####################
     @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.DataFileUtil', new=lambda *a: get_mock_dfu('enigma50by30_noAttrMaps_noSampleSet'))
+    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.GenericsAPI', new=lambda *a, **k: get_mock_gapi('enigma50by30_noAttrMaps_noSampleSet'))
     @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.run_check', new=get_mock_run_check('enigma50by30_noAttrMaps_noSampleSet'))
     @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.KBaseReport', new=lambda *a: get_mock_kbr())
     def test_default_params(self):
@@ -360,10 +384,12 @@ class kb_RDP_ClassifierTest(unittest.TestCase):
                 **self.params_ws,
                 'amp_mat_upa': enigma50by30_noAttrMaps_noSampleSet,
             })
+        self._check_objects()
 
     ####################
     ####################
     @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.DataFileUtil', new=lambda *a: get_mock_dfu('enigma50by30_noAttrMaps_noSampleSet'))
+    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.GenericsAPI', new=lambda *a, **k: get_mock_gapi('enigma50by30_noAttrMaps_noSampleSet'))
     @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.run_check', new=get_mock_run_check('enigma50by30_noAttrMaps_noSampleSet'))
     @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.KBaseReport', new=lambda *a: get_mock_kbr())
     def test_non_default_params(self):
@@ -383,17 +409,20 @@ class kb_RDP_ClassifierTest(unittest.TestCase):
     ####################
     ####################
     @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.DataFileUtil', new=lambda *a: get_mock_dfu('enigma50by30_noAttrMaps_noSampleSet'))
+    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.GenericsAPI', new=lambda *a, **k: get_mock_gapi('enigma50by30_noAttrMaps_noSampleSet'))
     @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.run_check', new=get_mock_run_check('enigma50by30_noAttrMaps_noSampleSet'))
     @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.KBaseReport', new=lambda *a: get_mock_kbr())
-    def test_no_taxonomy_or_AttributeMapping(self):
+    def test_no_row_AttributeMapping(self):
         ret = self.serviceImpl.run_classify(
             self.ctx, {
                 **self.params_ws,
                 'amp_mat_upa': enigma50by30_noAttrMaps_noSampleSet,
             })
+        self._check_objects()
 
 
     @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.DataFileUtil', new=lambda *a: get_mock_dfu('enigma50by30_noAttrMaps_noSampleSet_tooShortSeqs'))
+    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.GenericsAPI', new=lambda *a, **k: get_mock_gapi('enigma50by30_noAttrMaps_noSampleSet'))
     @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.run_check', new=get_mock_run_check('enigma50by30_noAttrMaps_noSampleSet_tooShortSeqs'))
     @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.KBaseReport', new=lambda *a: get_mock_kbr())
     ###################
@@ -408,6 +437,7 @@ class kb_RDP_ClassifierTest(unittest.TestCase):
     ####################
     ####################
     @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.DataFileUtil', new=lambda u: get_mock_dfu('enigma50by30_noAttrMaps_noSampleSet'))
+    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.GenericsAPI', new=lambda *a, **k: get_mock_gapi('enigma50by30_noAttrMaps_noSampleSet'))
     #@patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.run_check', new=get_mock_run_check('enigma50by30_noAttrMaps_noSampleSet', non_default_gene='silva_138_ssu'))
     @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.KBaseReport', new=lambda u: get_mock_kbr())
     def test_custom(self):
@@ -517,10 +547,10 @@ ci_tests = [ # integration tests
 appdev_tests = [ # integration tests
 ]
 
-run_tests = ['test'] 
+run_tests = ['test_params'] 
 
 for k, v in kb_RDP_ClassifierTest.__dict__.copy().items():
     if k.startswith('test') and callable(v):
         if k not in run_tests:
-            delattr(kb_RDP_ClassifierTest, k)
+            #delattr(kb_RDP_ClassifierTest, k)
             pass

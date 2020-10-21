@@ -27,12 +27,12 @@ from .util.error import *
 
 
 
-def run_check(cmd: str): # TODO time it
+def run_check(cmd: str, shell=True):
     logging.info('Running cmd `%s`' % cmd)
     t0 = time.time() 
     
-    # TODO remove shell
-    completed_proc = subprocess.run(cmd, shell=True, executable='/bin/bash', stdout=sys.stdout, stderr=sys.stderr)
+    # TODO remove shell for user-supplied?
+    completed_proc = subprocess.run(cmd, shell=shell, executable='/bin/bash', stdout=sys.stdout, stderr=sys.stderr)
 
     logging.info('Took %.2fmin' % ((time.time() - t0)/60))
 
@@ -42,6 +42,22 @@ def run_check(cmd: str): # TODO time it
             "Check logs for more details" %
             (cmd, completed_proc.returncode)
         )
+
+
+def prep_refdata():
+    refdata_dir = '/kb/module/data'
+    refdata_name = 'SILVA_138_SSU_NR_99'
+
+    cmd = (
+        'cd %s && cat %s_* > rejoined && tar xzf rejoined'
+        % (refdata_dir, refdata_name)
+    )
+
+    run_check(cmd)
+
+    if not os.path.exists(Var.propfile['silva_138_ssu']):
+        raise Exception(cmd)
+
 
 
 def parse_filterByConf(filterByConf_flpth: str, pad_ranks=True) -> dict:
@@ -139,13 +155,13 @@ class kb_RDP_Classifier:
 
         #
         ##
-        ### globals and directories
+        ### globals, directories, refdata, etc
         ####
         #####
 
         '''
         tmp/                                        `shared_folder`
-        └── run_kb_rdp_classifier_<uuid>/           `run_dir`
+        └── kb_rdp_cls_<uuid>/                      `run_dir`
             ├── return/                             `return_dir`
             |   ├── cmd.txt
             |   ├── study_seqs.fna
@@ -170,7 +186,7 @@ class kb_RDP_Classifier:
         reset_Var() # clear all fields but `debug` and config stuff
         Var.update({
             'params': params,
-            'run_dir': os.path.join(self.shared_folder, 'run_kb_rdp_classifier_' + str(uuid.uuid4())),
+            'run_dir': os.path.join(self.shared_folder, 'kb_rdp_cls_' + str(uuid.uuid4())),
             'dfu': DataFileUtil(self.callback_url),
             'ws': Workspace(self.workspace_url),
             'gapi': GenericsAPI(self.callback_url, service_ver='dev'),
@@ -194,6 +210,10 @@ class kb_RDP_Classifier:
 
         os.mkdir(Var.out_dir)
 
+        # cat and gunzip SILVA refdata
+        if params.is_custom():
+            prep_refdata()
+
 
         #
         ##
@@ -201,22 +221,21 @@ class kb_RDP_Classifier:
         ####
         #####
 
-        # intermediate referenced
         amp_mat = AmpliconMatrix(params['amp_mat_upa'])
 
-        # if `row_attrmap_upa` == None, 
-        # create new row AttributeMapping object 
-        # from amp_mat.obj['data']['row_ids']
-        row_attrmap = AttributeMapping(upa=amp_mat.row_attrmap_upa, amp_mat=amp_mat)  
+        row_attr_map_upa = amp_mat.obj.get('row_attributemapping_upa')
+        if row_attr_map_upa is None:
+            msg = (
+                "Input AmpliconMatrix does not have a row AttributeMapping to assign traits to. "
+                "A new row AttributeMapping will be created"
+            )
+            logging.warning(msg)
+            Var.warnings.append(msg)
 
-        dprint('amp_mat.row_attrmap_upa', run=locals())
-
-
-        # testing
-        Var.update(dict(
-            amp_mat=amp_mat,
-            row_attrmap=row_attrmap,
-        ))
+            # create new row AttributeMapping object 
+            # from amp_mat.obj['data']['row_ids']
+            # and row_mapping in amp_mat.obj['row_mapping']
+            row_attr_map = AttributeMapping(row_attr_map_upa, amp_mat=amp_mat)  
 
 
         #
@@ -283,49 +302,47 @@ class kb_RDP_Classifier:
             id2taxStr_d[shortSeq_id] = ''
 
         # add to globals for testing
-        # hacky?
         Var.shortSeq_id_l = shortSeq_id_l
 
 
         #
         ##
-        ### add classifications to row AttributeMapping
+        ### add to row AttributeMapping
         ####
         #####
 
         attribute = (
-            'RDP Classifier taxonomy, '
-            'conf=%s, gene=%s, minWords=%s' 
+            'RDP Classifier taxonomy, conf=%s, gene=%s, minWords=%s' 
             % (params.prose_args['conf'], params.prose_args['gene'], params.prose_args['minWords'])
         )
-        source = 'kb_rdp_classifier/run_classify' # TODO version?
+        source = 'kb_rdp_classifier/run_classify' # ver from provenance
 
-        ##
-        ## row AttributeMapping
-
-        ind = row_attrmap.get_attribute_slot(attribute, source)
-        row_attrmap.update_attribute(ind, id2taxStr_d)
-
-        #if Var.debug: TODO move to test
-        #    assert row_attrmap._is_tax_populated_looks_normal(ind)
-
+        ind = row_attr_map.get_attribute_slot_warn(attribute, source)
+        row_attr_map.update_attribute(ind, id2taxStr_d)
 
 
         #
         ##
-        ### update/save row AttributeMaping + referencing objects
+        ### save obj
         ####
         #####
 
-        row_attrmap_upa_new = row_attrmap.save()
+        row_attr_map_upa_new = row_attr_map.save()
 
-        amp_mat.update_row_attributemapping_ref(row_attrmap_upa_new)
+        amp_mat.obj['row_attributemapping_ref'] = row_attr_map_upa_new
         amp_mat_upa_new = amp_mat.save()
 
         objects_created = [
-            {'ref': row_attrmap_upa_new, 'description': 'Added or updated attribute `%s`' % attribute},
+            {'ref': row_attr_map_upa_new, 'description': 'Added or updated attribute `%s`' % attribute},
             {'ref': amp_mat_upa_new, 'description': 'Updated row AttributeMapping reference'},
         ]
+
+
+        # testing
+        Var.update(dict(
+            amp_mat=amp_mat,
+            row_attr_map=row_attr_map,
+        ))
 
 
 

@@ -62,7 +62,7 @@
             "optional": false,
             "advanced": true,
             "allow_multiple": false,
-            "default_values": [ "16srrna" ],
+            "default_values": [ "silva_138_ssu" ],
             "field_type": "dropdown",
             "dropdown_options": {
                 "options": [
@@ -78,6 +78,9 @@
                     },{
                         "value": "fungalits_unite",
                         "display": "fungalits_unite"
+                    },{
+                        "value": "silva_138_ssu",
+                        "display": "silva_138_ssu (experimental)"
                     }
                 ]
             }

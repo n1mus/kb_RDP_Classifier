@@ -40,7 +40,7 @@ class Params:
     DEFAULTS = {
        'output_name': None, # null case
        'conf': 0.8,                 
-       'gene': '16srrna',           
+       'gene': 'silva_138_ssu',           
        'minWords': None, # null case
     }
 
@@ -70,8 +70,8 @@ class Params:
         # don't allow extraneous params prevent misspelling
         pass
 
-    @property
-    def custom(self) -> bool:
+
+    def is_custom(self) -> bool:
         return self.getd('gene') in self.CUSTOM
 
 
@@ -95,19 +95,32 @@ class Params:
         Non-default RDP Classifier `classify` CLI args
         '''
        
-        rdp_params = ['conf', 'gene', 'minWords'] # params for the RDP Clsf program
+        cli_args = []
 
+        if self.getd('conf') != self.DEFAULTS['conf']:
+            cli_args += ['--conf', str(self.getd('conf'))]
+
+        if self.getd('gene') == self.DEFAULTS['gene']:
+            cli_args += ['--train_propfile', Var.propfile[self.getd('gene')]]
+        else:
+            cli_args += ['--gene', self.getd('gene')]
+
+        if self.getd('minWords') != self.DEFAULTS['minWords']:
+            cli_args += ['--minWords', str(self.getd('minWords'))]
+
+
+        """
         # gather non-default
         cli_args = []
         for p in rdp_params:
             if self.getd(p) != self.DEFAULTS[p]:
                 # different params for 'gene' for custom trainset
-                if p == 'gene' and self.custom:
+                if p == 'gene' and self.is_custom():
                     cli_args.append('--train_propfile')
                     cli_args.append(Var.propfile[self.params['gene']])
                     continue
                 cli_args.append('--' + p)
-                cli_args.append(str(self.params[p]))
+                cli_args.append(str(self.params[p]))"""
 
         return cli_args
 
@@ -128,7 +141,7 @@ class Params:
         Return the user-supplied value, or the default value if none was supplied
         '''
         if key not in self.DEFAULTS:
-            raise Exception('`getd` only applicable to params with defaults')
+            raise Exception('`params.getd(x)` only applicable to params with defaults')
 
         return self.params.get(key, self.DEFAULTS[key])
 

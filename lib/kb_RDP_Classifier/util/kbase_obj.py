@@ -18,24 +18,7 @@ pd.set_option('display.width', 1000)
 pd.set_option('display.max_colwidth', 20)
 
 
-def write_json(obj, flnm, AmpliconSet=False):  # TODO nix this but keep the annotate with AmpMat name                                                 
-    '''                                                                                             
-    For debugging/testing                                                                           
-    '''                                                                                             
-    if 'run_dir' not in Var:                                                                        
-        import uuid                                                                                 
-        Var.run_dir = os.path.join('/kb/module/work/tmp', str(uuid.uuid4()))                        
-        os.mkdir(Var.run_dir)                                                                       
-                                                                                                    
-    flpth = os.path.join(Var.run_dir, flnm)                                                         
-    with open(flpth, 'w') as f:                                                                     
-        json.dump(obj, f, indent=3)                                                                 
-                                                                                                    
-    if AmpliconSet == True:                                                                         
-        dprint('touch %s' % os.path.join(Var.run_dir, '#' + obj['data'][0]['info'][1]), run='cli') # annotate run_dir with name
-                                                                                                    
-  
-
+                    
 
 ####################################################################################################
 ####################################################################################################
@@ -56,41 +39,28 @@ class AmpliconMatrix:
             'object_refs': [self.upa]
             })
 
-        if Var.debug: write_json(obj, 'get_objects_AmpliconMatrix.json')
-
         self.name = obj['data'][0]['info'][1]
         self.obj = obj['data'][0]['data']
 
-    @property 
-    def row_attrmap_upa(self):
-        row_attrmap_upa = self.obj.get('row_attributemapping_ref')
-        if row_attrmap_upa is None: # TODO move this logic to impl
-            msg = (
-                "Input AmpliconMatrix does not have a row AttributeMapping to assign traits to. "
-                "A new row AttributeMapping will be created"
-            )
-            if msg not in Var.warnings:
-                logging.warning(msg)
-                Var.warnings.append(msg)
-
-        return row_attrmap_upa
+        if Var.debug is True:                                                                         
+            dprint('touch %s' % os.path.join(Var.run_dir, '#' + self.name), run='cli') # annotate run_dir with name
 
     def get_fasta(self):
         dprint('self.upa', run=locals())
         fasta_flpth = Var.gapi.fetch_sequence(self.upa)
         return fasta_flpth
 
-
-    def update_row_attributemapping_ref(self, row_attrmap_upa_new):
-        self.obj['row_attributemapping_ref'] = row_attrmap_upa_new
-
+    def add_row_mapping(self):
+        self.obj['row_mapping'] = {
+            id: id for id in self.obj['data']['row_ids']
+        }
 
     def save(self, name=None):
 
         info = Var.dfu.save_objects({
             "id": Var.params['workspace_id'],
             "objects": [{
-                "type": self.OBJ_TYPE,
+                "type": self.OBJ_TYPE, # TODO version
                 "data": self.obj,
                 "name": name if name else self.name,
                 "extra_provenance_input_refs": [self.upa],
@@ -139,13 +109,12 @@ class AttributeMapping:
             'object_refs': [self.upa]
             })
 
-        if Var.debug: write_json(obj, 'get_objects_AttributeMapping.json')
-
         self.name = obj['data'][0]['info'][1]
         self.obj = obj['data'][0]['data']
 
 
     def _get_obj_new(self):
+        self.amp_mat.add_row_mapping() # row_mapping is conditionally required with row_attributemapping_ref
         
         id_l = self.amp_mat.obj['data']['row_ids']
 
@@ -161,7 +130,7 @@ class AttributeMapping:
 
 
 
-    def get_attribute_slot(self, attribute: str, source: str) -> int:
+    def get_attribute_slot_warn(self, attribute: str, source: str) -> int:
 
         d = {'attribute': attribute, 'source': source}
 
@@ -205,7 +174,7 @@ class AttributeMapping:
         logging.info('Saving %s' % self.OBJ_TYPE)
 
         obj = {
-            "type": self.OBJ_TYPE,
+            "type": self.OBJ_TYPE, # TODO version
             "data": self.obj,
             "name": name if name is not None else self.name,
         }
@@ -225,26 +194,4 @@ class AttributeMapping:
 
 
 
-
-    # TODO move to testing
-    '''
-    def _is_tax_populated_looks_normal(self, ind): 
-        """
-        For testing
-        Make sure that attribute is present, and all AmpliconSet id's are assigned for
-        Doesn't work for every case since RDP skips assigning for too short sequences
-        """
-        
-        num_attr = len(self.obj['attributes'])
-
-        for id, instance in self.obj['instances'].items():
-            assert len(instance) == num_attr
-            if id in self.amp_mat.obj['data']['row_ids']:
-                if id in Var.shortSeq_id_l:
-                    assert instance[ind] == ''
-                else:
-                    assert re.match('(.+;){6}$', instance[ind]), 'attribute is `%s`' % instance[ind]
-
-        return True
-    '''
 

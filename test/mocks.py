@@ -51,7 +51,7 @@ def get_mock_gapi(dataset):
     def mock_gapi_fetch_sequence(params):
         logging.info('Mocking `gapi.fetch_sequence` with `params=%s`' % str(params))
 
-        flpth = os.path.join(testData_dir, 'by_dataSet_input', dataset, 'fetch_sequence/seqs.fna')
+        flpth = os.path.join(testData_dir, 'by_dataset_input', dataset, 'fetch_sequence/seqs.fna')
         return flpth
 
     mock_gapi.fetch_sequence.side_effect = mock_gapi_fetch_sequence
