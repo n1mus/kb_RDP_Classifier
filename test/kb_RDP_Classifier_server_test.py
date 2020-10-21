@@ -235,6 +235,10 @@ class kb_RDP_ClassifierTest(unittest.TestCase):
         Test row AttributeMapping behavior when AmpliconMatrix has row AttributeMapping
         Row AttributeMapping indices should be in sync with AmpliconMatrix indices (1 to 1)
         '''
+        Var.run_dir = os.path.join(
+            self.scratch, 
+            'test_AmpliconMatix_wRowAttributeMapping_AttributeMapping_' + str(uuid.uuid4())
+        )
 
         amp_mat = AmpliconMatrix(dummy_10by8_AmpMat_wRowAttrMap)
         self.assertTrue(len(Var.warnings) == 0)
@@ -303,6 +307,10 @@ class kb_RDP_ClassifierTest(unittest.TestCase):
         '''
         Test row AttributeMapping behavior when AmpliconMatrix has now row AttributeMapping
         '''
+        Var.run_dir = os.path.join(
+            self.scratch, 
+            'test_AmpliconMatix_noRowAttributeMapping_AttributeMapping_' + str(uuid.uuid4())
+        )
 
         amp_mat = AmpliconMatrix(dummy_10by8_AmpMat_noRowAttrMap)
         attr_map = AttributeMapping(amp_mat.obj.get('row_attributemapping_ref'), amp_mat)
@@ -357,7 +365,7 @@ class kb_RDP_ClassifierTest(unittest.TestCase):
     ####################
     @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.DataFileUtil', new=lambda *a: get_mock_dfu('enigma50by30'))
     @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.GenericsAPI', new=lambda *a, **k: get_mock_gapi('enigma50by30'))
-    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.run_check', new=get_mock_run_check('enigma50by30'))
+    #@patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.run_check', new=get_mock_run_check('enigma50by30'))
     @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.KBaseReport', new=lambda *a: get_mock_kbr())
     def test_default_params(self):
         ret = self.serviceImpl.run_classify(
@@ -399,6 +407,9 @@ class kb_RDP_ClassifierTest(unittest.TestCase):
             self.ctx, {
                 **self.params_ws,
                 'amp_mat_upa': enigma50by30_noAttrMaps_noSampleSet,
+                'rdp_clsf': {
+                    'gene': '16srrna',
+                },
             })
         self._check_objects()
 
@@ -414,6 +425,9 @@ class kb_RDP_ClassifierTest(unittest.TestCase):
             self.ctx, {
                 **self.params_ws,
                 'amp_mat_upa': enigma50by30_noAttrMaps_noSampleSet_tooShortSeqs,
+                'rdp_clsf': {
+                    'gene': '16srrna',
+                },
             })
         self._check_objects()
 
@@ -498,11 +512,6 @@ class kb_RDP_ClassifierTest(unittest.TestCase):
         dec = '!!!' * 200
         print(dec,  "DO NOT FORGET TO GRAB HTML(S)", dec)
 
-    @staticmethod
-    def subproc_run(cmd):
-        logging.info('Running cmd: `%s`' % cmd)
-        subprocess.run(cmd, shell=True, executable='/bin/bash', stdout=sys.stdout, stderr=sys.stderr)
-
     def shortDescription(self):
         '''Override unittest using test*() docstrings in lieu of test*() method name in output summary'''
         return None
@@ -531,10 +540,10 @@ ci_tests = [ # integration tests
 appdev_tests = [ # integration tests
 ]
 
-run_tests = ['test_default_params', 'test_non_default_params'] 
+run_tests = ['test_custom'] 
 
 for k, v in kb_RDP_ClassifierTest.__dict__.copy().items():
     if k.startswith('test') and callable(v):
-        if k not in ci_tests:
+        if k not in unit_tests:
             delattr(kb_RDP_ClassifierTest, k)
             pass

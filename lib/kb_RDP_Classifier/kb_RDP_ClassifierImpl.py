@@ -117,7 +117,6 @@ class kb_RDP_Classifier:
         #BEGIN_CONSTRUCTOR
         logging.basicConfig(format='%(created)s %(levelname)s: %(message)s',
                             level=logging.INFO)
-        logging.getLogger().addHandler(logging.StreamHandler(sys.stdout))
 
         self.callback_url = os.environ['SDK_CALLBACK_URL']
         self.workspace_url = config['workspace-url']
@@ -228,7 +227,7 @@ class kb_RDP_Classifier:
         if row_attr_map_upa is None:
             msg = (
                 "Input AmpliconMatrix does not have a row AttributeMapping to assign traits to. "
-                "A new row AttributeMapping will be created"
+                "A new one will be created"
             )
             logging.warning(msg)
             Var.warnings.append(msg)
@@ -328,7 +327,7 @@ class kb_RDP_Classifier:
         row_attr_map_upa_new = row_attr_map.save()
 
         amp_mat.obj['row_attributemapping_ref'] = row_attr_map_upa_new
-        amp_mat_upa_new = amp_mat.save()
+        amp_mat_upa_new = amp_mat.save(name=params.getd('output_name'))
 
         objects_created = [
             {'ref': row_attr_map_upa_new, 'description': 'Added or updated attribute `%s`' % attribute},

@@ -109,19 +109,6 @@ class Params:
             cli_args += ['--minWords', str(self.getd('minWords'))]
 
 
-        """
-        # gather non-default
-        cli_args = []
-        for p in rdp_params:
-            if self.getd(p) != self.DEFAULTS[p]:
-                # different params for 'gene' for custom trainset
-                if p == 'gene' and self.is_custom():
-                    cli_args.append('--train_propfile')
-                    cli_args.append(Var.propfile[self.params['gene']])
-                    continue
-                cli_args.append('--' + p)
-                cli_args.append(str(self.params[p]))"""
-
         return cli_args
 
 
