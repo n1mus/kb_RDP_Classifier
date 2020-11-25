@@ -456,13 +456,6 @@ class kb_RDP_ClassifierTest(unittest.TestCase):
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-    ####################
-    ####################
-    def test_assert(self):
-        '''Test that asserts have not been compiled out'''
-        with self.assertRaises(AssertionError):
-            assert False
-
     @classmethod
     def setUpClass(cls):
         token = os.environ.get('KB_AUTH_TOKEN', None)
@@ -501,16 +494,22 @@ class kb_RDP_ClassifierTest(unittest.TestCase):
         cls.callback_url = os.environ['SDK_CALLBACK_URL']
 
     @classmethod
+    def list_tests(cls):
+        return [key for key, value in cls.__dict__.items() if type(key) == str and key.startswith('test') and callable(value)]
+
+    @classmethod
     def tearDownClass(cls):
         if hasattr(cls, 'wsName'):
             cls.wsClient.delete_workspace({'workspace': cls.wsName})
             print('Test workspace was deleted')
-        tests = [key for key, value in cls.__dict__.items() if type(key) == str and key.startswith('test') and callable(value)]
-        print('Tests ran:', tests)
-        print('Tests skipped:', list(set(all_tests) - set(tests)))
-        print('do_patch:', do_patch)
         dec = '!!!' * 200
         print(dec,  "DO NOT FORGET TO GRAB HTML(S)", dec)
+
+        skipped_tests = list(set(all_tests) - set(cls.list_tests()))
+        print('* do_patch:', do_patch)
+        print('* All tests (%d): %s' % (len(all_tests), all_tests))
+        print('* Tests skipped (%d): %s' % (len(skipped_tests), skipped_tests))
+        print('* Tests run (%d): %s' % (len(cls.list_tests()), cls.list_tests()))
 
     def shortDescription(self):
         '''Override unittest using test*() docstrings in lieu of test*() method name in output summary'''
@@ -525,7 +524,6 @@ all_tests = [k for k, v in kb_RDP_ClassifierTest.__dict__.items() if k.startswit
 
 
 unit_tests = [ # environment and patch-toggling independent
-    'test_assert',
     'test_run_check', 'test_parse_filterByConf', 'test_params', 
     'test_AmpliconMatrix_noRowAttrMap_AttributeMapping', 'test_AmpliconMatrix_wRowAttrMap_AttributeMapping',
     'test_report'
@@ -542,8 +540,7 @@ appdev_tests = [ # integration tests
 
 run_tests = ['test_custom'] 
 
-for k, v in kb_RDP_ClassifierTest.__dict__.copy().items():
-    if k.startswith('test') and callable(v):
-        if k not in unit_tests:
-            delattr(kb_RDP_ClassifierTest, k)
+for test in all_tests:
+        if test not in unit_tests:
+            #delattr(kb_RDP_ClassifierTest, test)
             pass

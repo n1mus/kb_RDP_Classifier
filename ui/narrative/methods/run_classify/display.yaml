@@ -1,10 +1,10 @@
 #
 # define display information
 #
-name: RDP Classifier / classify
+name: Classify rRNA with taxonomy using na&iuml;ve Bayes with RDP Classifier v2.13
 
 tooltip: |
-    Quickly classify rRNA with taxonomy with bootstrap confidence using na&iuml;ve Bayes
+    Promptly classify rRNA, in linear time, with bootstrap confidence, against SSU or LSU datasets
 
 screenshots: []
 
@@ -28,7 +28,7 @@ parameters :
         ui-name : |
             AmpliconMatrix
         short-hint : |
-            Object of type <code>AmpliconMatrix</code>, which has amplicon sequences
+            Object of type <code>AmpliconMatrix</code>, which has or references amplicon sequences
     output_name:
         ui-name: |
             New AmpliconMatrix name
@@ -41,11 +41,11 @@ parameters :
             conf
         short-hint : |
             Bootstrap confidence threshold, under which a rank will be considered unclassified
-    gene :
+    gene:
         ui-name : |
             gene
         short-hint : |
-            Gene and training dataset to classify against
+            Gene and training dataset to classify against. The training dataset is from RDP unless otherwise stated as being from SILVA
     minWords :
         ui-name : |
             minWords
@@ -62,15 +62,36 @@ parameter-groups:
             Parameters that the RDP Classifier <code>classify</code> program takes
 
 description : |
-    <p>Note: in cases of joint probability ties between highest scoring genera, assignment of the genus is deterministic, with the first genus being chosen. 
-    But in cases of bootstrap joint probability ties, ties are broken randomly. 
+    <!--------------------------------------------------------------------------------------------->
+    <h2>
+    App Behavior
+    </h2>
+
+    <p>Note: in cases of joint probability ties between highest scoring genera, <i>assignment</i> of the genus is deterministic, with the first genus being chosen. 
+    But in cases of <i>bootstrap</i> joint probability ties, ties are broken randomly. 
     This affects, across runs, where along the ranks cutoffs by confidence occur. 
     See RDP Classifier's Github page and publication for more details</p>
+
+    <!--------------------------------------------------------------------------------------------->
+    <h2>
+    Resources
+    </h2>
 
     <p><a href="https://rdp.cme.msu.edu/classifier/class_help.jsp">RDP Classifier's help page</a></p>
 
     <p><a href="https://github.com/rdpstaff/classifier">RDP Classifier's Github</a></p>
 
+    <!--------------------------------------------------------------------------------------------->
+    <h2>
+    Acknowledgements
+    </h2>
+
+    <p>
+    Thanks to P. Weisenhorn for helpful comments and visualization suggestions.
+    </p>
+
+
+    <br><br>
 
     
 publications:

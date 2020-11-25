@@ -106,7 +106,7 @@ class AttributeMapping:
 
     def _get_obj(self):
         obj = Var.dfu.get_objects({
-            'object_refs': [self.upa]
+            'object_refs': ['%s;%s' % (self.amp_mat.upa, self.upa)]
             })
 
         self.name = obj['data'][0]['info'][1]

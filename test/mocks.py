@@ -85,7 +85,7 @@ def get_mock_dfu(dataset):
     def mock_dfu_get_objects(params):
         logging.info('Mocking `dfu.get_objects` with `params=%s`' % str(params))
 
-        upa = params['object_refs'][0]
+        upa = params['object_refs'][0].split(';')[-1]
         flnm = {
             enigma50by30_noAttrMaps_noSampleSet: 'AmpliconMatrix.json',
             enigma50by30_noAttrMaps_noSampleSet_tooShortSeqs: 'AmpliconMatrix.json',
