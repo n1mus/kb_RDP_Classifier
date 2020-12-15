@@ -9,9 +9,9 @@ from installed_clients.DataFileUtilClient import DataFileUtil
 from installed_clients.KBaseReportClient import KBaseReport
 from installed_clients.GenericsAPIClient import GenericsAPI
 
-from kb_RDP_Classifier.kb_RDP_ClassifierImpl import run_check
-from kb_RDP_Classifier.util.dprint import dprint
-from kb_RDP_Classifier.util.config import Var
+from kb_RDP_Classifier.util.cli import run_check
+from kb_RDP_Classifier.util.debug import dprint
+from kb_RDP_Classifier.impl.globals import Var
 
 
 ##################################
@@ -19,8 +19,6 @@ from kb_RDP_Classifier.util.config import Var
 testData_dir = '/kb/module/test/data'
 ##################################
 ##################################
-
-
 
 ####################################################################################################
 ################################ CI ################################################################
@@ -31,6 +29,9 @@ enigma50by30_noAttrMaps_noSampleSet_tooShortSeqs = '55136/6/1'
 enigma50by30 = '55136/15/1'
 enigma50by30_rowAttrMap = '55136/11/1'
 
+enigma17770by511 = '55136/26/1' # AmpliconMatrix
+enigma17770by511_rowAttrMap = '55136/19/1'
+
 ####################################################################################################
 ############################### appdev #############################################################
 ####################################################################################################
@@ -40,9 +41,9 @@ enigma50by30_rowAttrMap = '55136/11/1'
 ####################################################################################################
 ########################## dummy ###################################################################
 ####################################################################################################
-dummy_10by8_AmpMat_noRowAttrMap = 'dummy/10by8/AmpMat_noRowAttrMap'
-dummy_10by8_AmpMat_wRowAttrMap = 'dummy/10by8/AmpMat_wRowAttrMap'
-dummy_10by8_AttrMap = 'dummy/10by8/AttrMap'
+dummy10by8_AmpMat_noRowAttrMap = 'dummy/10by8/AmpMat_noRowAttrMap'
+dummy10by8_AmpMat_wRowAttrMap = 'dummy/10by8/AmpMat_wRowAttrMap'
+dummy10by8_AttrMap = 'dummy/10by8/AttrMap'
 
 
 
@@ -91,9 +92,11 @@ def get_mock_dfu(dataset):
             enigma50by30_noAttrMaps_noSampleSet_tooShortSeqs: 'AmpliconMatrix.json',
             enigma50by30: 'AmpliconMatrix.json',
             enigma50by30_rowAttrMap: 'row_AttributeMapping.json',
-            dummy_10by8_AmpMat_wRowAttrMap: 'get_objects_AmpliconMatrix_wRowAttrMap.json',
-            dummy_10by8_AmpMat_noRowAttrMap: 'get_objects_AmpliconMatrix_noRowAttrMap.json',
-            dummy_10by8_AttrMap: 'get_objects_AttributeMapping.json',
+            enigma17770by511: 'AmpliconMatrix.json',
+            enigma17770by511_rowAttrMap: 'row_AttributeMapping.json',
+            dummy10by8_AmpMat_wRowAttrMap: 'get_objects_AmpliconMatrix_wRowAttrMap.json',
+            dummy10by8_AmpMat_noRowAttrMap: 'get_objects_AmpliconMatrix_noRowAttrMap.json',
+            dummy10by8_AttrMap: 'get_objects_AttributeMapping.json',
             }[upa]
         flpth = os.path.join(testData_dir, 'by_dataset_input', dataset, 'get_objects', flnm)
 

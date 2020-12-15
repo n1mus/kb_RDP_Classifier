@@ -28,7 +28,7 @@ parameters :
         ui-name : |
             AmpliconMatrix
         short-hint : |
-            Object of type <code>AmpliconMatrix</code>, which has or references amplicon sequences
+            Object of type <code>AmpliconMatrix</code>, which references amplicon sequences
     output_name:
         ui-name: |
             New AmpliconMatrix name
@@ -45,12 +45,12 @@ parameters :
         ui-name : |
             gene
         short-hint : |
-            Gene and training dataset to classify against. The training dataset is from RDP unless otherwise stated as being from SILVA
+            Reference dataset and gene to classify against
     minWords :
         ui-name : |
             minWords
         short-hint: |
-            Number of 8-mers from input sequence to randomly select with replacement to calculate bootstrap confidence. Default (leave field blank) is 1/8 the length of the sequence
+            Minimum number of 8-mers from input sequence to randomly select with replacement to calculate bootstrap confidence. Default (leave field blank) is 1/8 the length of the sequence. 
            
     
 
@@ -59,7 +59,7 @@ parameter-groups:
         ui-name: |
             RDP Classifier options
         short-hint: |
-            Parameters that the RDP Classifier <code>classify</code> program takes
+            Parameters that the RDP Classifier <code>classify</code> command takes
 
 description : |
     <!--------------------------------------------------------------------------------------------->
@@ -67,10 +67,40 @@ description : |
     App Behavior
     </h2>
 
-    <p>Note: in cases of joint probability ties between highest scoring genera, <i>assignment</i> of the genus is deterministic, with the first genus being chosen. 
-    But in cases of <i>bootstrap</i> joint probability ties, ties are broken randomly. 
-    This affects, across runs, where along the ranks cutoffs by confidence occur. 
-    See RDP Classifier's Github page and publication for more details</p>
+    <p>
+    Note about interpreting the fixed-rank output format: 
+    This should be taken with a grain of salt, knowing that taxonomy is not always fixed rank.
+    Yes, the fixed ranks refer to the ranks of domain, phylum, class, order, family, genus.
+    But sometimes taxonomy skips interim ranks or doesn't go all the way down to genus.
+    In fact, the RDP Classifier convention to deal with training against taxonomic databases
+    when some taxonomic annotations end prematurely is to create dummy genus nodes
+    with the name bearing its parent (whatever rank that is) prepended to '_genera_incertae_sedis'.
+    But how are missing interim nodes dealt with in the fixed-rank format?
+    In this case, RDP Classifier will gap-fill the missing ranks with the name and bootstrap confidence
+    of the next lowest available rank.
+    </p>
+
+    <p>
+    Note about the filter-by-confidence output format:
+    As you may have noticed, everything that is cut off by the bootstrap confidence threshold
+    just gets the name of the last rank with a passable confidence, prepended with 'unclassified_'
+    </p>
+
+
+    <p>
+    Note about randomness: the randomness of bootstrap confidence scores affects, across runs, 
+    where along the ranks cutoffs by confidence may occur. 
+    
+    In cases of joint probability ties between highest scoring genera, 
+    <i>assignment</i> of the genus is deterministic, with the first genus being chosen. 
+    But in cases of <i>bootstrap</i> joint probability ties, ties are broken randomly,
+    so that the bootstrap confidence is the inverse of the number of tying genera. 
+    See RDP Classifier's Github page for more details
+    </p>
+
+    <p>
+    </p>
+
 
     <!--------------------------------------------------------------------------------------------->
     <h2>
@@ -78,8 +108,9 @@ description : |
     </h2>
 
     <p><a href="https://rdp.cme.msu.edu/classifier/class_help.jsp">RDP Classifier's help page</a></p>
-
     <p><a href="https://github.com/rdpstaff/classifier">RDP Classifier's Github</a></p>
+    <p><a href="https://sourceforge.net/projects/rdp-classifier/files/RDP_Classifier_TrainingData/">RDP Classifier 2.13 release notes, with dataset updates</a></p>
+
 
     <!--------------------------------------------------------------------------------------------->
     <h2>
@@ -88,6 +119,9 @@ description : |
 
     <p>
     Thanks to P. Weisenhorn for helpful comments and visualization suggestions.
+    And thanks to the KBase team in general, 
+    some or other of the engineers with distinction, 
+    for their ideas and help.
     </p>
 
 

@@ -2,6 +2,6 @@ test_local
 sdk.cfg
 .*.sw[a-z]
 *.py.bak*
-tmp
+*tmp
 test/data/
 __pycache__/

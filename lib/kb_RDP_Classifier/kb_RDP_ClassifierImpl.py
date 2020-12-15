@@ -17,71 +17,14 @@ from installed_clients.DataFileUtilClient import DataFileUtil
 from installed_clients.KBaseReportClient import KBaseReport
 from installed_clients.GenericsAPIClient import GenericsAPI
 
-from .util.params import Params
-from .util.report import HTMLReportWriter
-from .util.dprint import dprint
-from .util.config import reset_Var, Var
-from .util.kbase_obj import  AmpliconMatrix, AttributeMapping
-from .util.error import *
-
-
-
-
-def run_check(cmd: str, shell=True):
-    logging.info('Running cmd `%s`' % cmd)
-    t0 = time.time() 
-    
-    # TODO remove shell for user-supplied?
-    completed_proc = subprocess.run(cmd, shell=shell, executable='/bin/bash', stdout=sys.stdout, stderr=sys.stderr)
-
-    logging.info('Took %.2fmin' % ((time.time() - t0)/60))
-
-    if completed_proc.returncode != 0:
-        raise NonZeroReturnException(
-            "Command `%s` exited with non-zero return code `%d`. "
-            "Check logs for more details" %
-            (cmd, completed_proc.returncode)
-        )
-
-
-def prep_refdata():
-    refdata_dir = '/kb/module/data'
-    refdata_name = 'SILVA_138_SSU_NR_99'
-
-    cmd = (
-        'cd %s && cat %s_* > rejoined && tar xzf rejoined'
-        % (refdata_dir, refdata_name)
-    )
-
-    run_check(cmd)
-
-    if not os.path.exists(Var.propfile['silva_138_ssu']):
-        raise Exception(cmd)
-
-
-
-def parse_filterByConf(filterByConf_flpth: str, pad_ranks=True) -> dict:
-
-    NUM_RANKS = 7
-    
-    # index is amplicon id
-    df = pd.read_csv(filterByConf_flpth, sep='\t', index_col=0)
-    id2taxStr_d = df.apply(
-        lambda row: ';'.join(
-            list(row.array) + ([''] * (NUM_RANKS - len(row.array)) if pad_ranks is True else []) 
-        ), 
-        axis=1
-    ).to_dict()
-
-    return id2taxStr_d
-
-
-def parse_shortSeq(shortSeq_flpth: str):
-
-    with open(shortSeq_flpth) as fh:
-        ids = [id.strip() for id in fh.read().strip().splitlines() if len(id.strip()) > 0]
-
-    return ids
+from .impl.params import Params
+from .impl.report import HTMLReportWriter
+from .impl.globals import reset_Var, Var
+from .impl.kbase_obj import  AmpliconMatrix, AttributeMapping
+from .impl.error import *
+from .impl import app_file 
+from .util.debug import dprint
+from .util.cli import run_check
 
 
 
@@ -154,13 +97,13 @@ class kb_RDP_Classifier:
 
         #
         ##
-        ### globals, directories, refdata, etc
+        ### globals, directories, refdata, etc TODO move directory stuff to config
         ####
         #####
 
         '''
         tmp/                                        `shared_folder`
-        └── kb_rdp_cls_<uuid>/                      `run_dir`
+        └── kb_rdp_clsf_<uuid>/                      `run_dir`
             ├── return/                             `return_dir`
             |   ├── cmd.txt
             |   ├── study_seqs.fna
@@ -185,7 +128,7 @@ class kb_RDP_Classifier:
         reset_Var() # clear all fields but `debug` and config stuff
         Var.update({
             'params': params,
-            'run_dir': os.path.join(self.shared_folder, 'kb_rdp_cls_' + str(uuid.uuid4())),
+            'run_dir': os.path.join(self.shared_folder, 'kb_rdp_clsf_' + str(uuid.uuid4())),
             'dfu': DataFileUtil(self.callback_url),
             'ws': Workspace(self.workspace_url),
             'gapi': GenericsAPI(self.callback_url, service_ver='dev'),
@@ -210,8 +153,9 @@ class kb_RDP_Classifier:
         os.mkdir(Var.out_dir)
 
         # cat and gunzip SILVA refdata
+        # which has been split into ~95MB chunks to get onto Github
         if params.is_custom():
-            prep_refdata()
+            app_file.prep_refdata()
 
 
         #
@@ -267,6 +211,12 @@ class kb_RDP_Classifier:
         run_check(cmd_filterByConf)
 
 
+        # give these to file parsing module
+        Var.out_filterByConf_flpth = out_filterByConf_flpth
+        Var.out_fixRank_flpth = out_fixRank_flpth
+        Var.out_shortSeq_flpth = out_shortSeq_flpth
+
+
 
         #
         ##
@@ -274,15 +224,19 @@ class kb_RDP_Classifier:
         ####
         #####
 
-        id2taxStr_d = parse_filterByConf(out_filterByConf_flpth) 
+        id2taxStr = app_file.parse_filterByConf() 
 
         # get ids of classified and unclassified seqs
-        shortSeq_id_l = parse_shortSeq(out_shortSeq_flpth) # sequences too short to get clsf
-        classified_id_l = list(id2taxStr_d.keys())
+        shortSeq_id_l = app_file.parse_shortSeq() # sequences too short to get clsf
+        classified_id_l = list(id2taxStr.keys())
 
         # make sure classifieds and shorts complement
         if Var.debug:
-            assert sorted(classified_id_l + shortSeq_id_l) == sorted(amp_mat.obj['data']['row_ids'])
+            ret = sorted(classified_id_l + shortSeq_id_l)
+            mat = sorted(amp_mat.obj['data']['row_ids'])
+            assert ret == mat, \
+                'diff1: %s, diff2: %s' % (set(ret)-set(mat), set(mat)-set(ret))
+
 
         # warnings
         if len(shortSeq_id_l) > 0:
@@ -296,7 +250,7 @@ class kb_RDP_Classifier:
         # so id2taxStr_l is complete
         # so no KeyErrors later
         for shortSeq_id in shortSeq_id_l:
-            id2taxStr_d[shortSeq_id] = ''
+            id2taxStr[shortSeq_id] = ''
 
         # add to globals for testing
         Var.shortSeq_id_l = shortSeq_id_l
@@ -315,7 +269,7 @@ class kb_RDP_Classifier:
         source = 'kb_rdp_classifier/run_classify' # ver from provenance
 
         ind = row_attr_map.get_attribute_slot_warn(attribute, source)
-        row_attr_map.update_attribute(ind, id2taxStr_d)
+        row_attr_map.update_attribute(ind, id2taxStr)
 
 
         #
@@ -351,7 +305,6 @@ class kb_RDP_Classifier:
         #####
 
         hrw = HTMLReportWriter(
-            out_files=[out_fixRank_flpth, out_filterByConf_flpth], 
             cmd_l=[cmd_fixRank_shortSeq, cmd_filterByConf]
         )
 

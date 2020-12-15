@@ -68,19 +68,19 @@
                 "options": [
                     {
                         "value": "16srrna",
-                        "display": "16srrna"
+                        "display": "RDP Classifier 2.13 - 16srrna"
                      },{
                         "value": "fungallsu",
-                        "display": "fungallsu"
+                        "display": "RDP Classifier 2.13 - fungallsu"
                     },{
                         "value": "fungalits_warcup",
-                        "display": "fungalits_warcup"
+                        "display": "RDP Classifier 2.13 - fungalits_warcup"
                     },{
                         "value": "fungalits_unite",
-                        "display": "fungalits_unite"
+                        "display": "RDP Classifier 2.13 - fungalits_unite"
                     },{
                         "value": "silva_138_ssu",
-                        "display": "silva_138_ssu (experimental)"
+                        "display": "SILVA 138 - SSU (experimental)"
                     }
                 ]
             }

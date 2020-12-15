@@ -1,0 +1,61 @@
+<style>
+#imgLink img {
+border: 1px solid blue
+}
+#imgLink img:hover {                                                                                 
+outline: 2px solid blue                                                                            
+}
+</style>
+
+commands_content = BLOCK; %]
+<p><code>java -Xmx2g -jar /opt/rdp_classifier_2.13/dist/classifier.jar classify /kb/module/work/tmp/kb_rdp_cls_7efbd0a3-e4d1-41ee-a9c6-0ae76ecfa3f5/return/study_seqs.fna --conf 0.777 --train_propfile /kb/module/data/SILVA_138_SSU_NR_99/rRNAClassifier.properties --format filterByConf --outputFile /kb/module/work/tmp/kb_rdp_cls_7efbd0a3-e4d1-41ee-a9c6-0ae76ecfa3f5/return/RDP_Classifier_output/out_filterByConf.tsv --shortseq_outfile /kb/module/work/tmp/kb_rdp_cls_7efbd0a3-e4d1-41ee-a9c6-0ae76ecfa3f5/return/RDP_Classifier_output/out_unclassifiedShortSeqs.txt</code></p>
+<p><code>java -Xmx2g -jar /opt/rdp_classifier_2.13/dist/classifier.jar classify /kb/module/work/tmp/kb_rdp_cls_7efbd0a3-e4d1-41ee-a9c6-0ae76ecfa3f5/return/study_seqs.fna --conf 0.777 --train_propfile /kb/module/data/SILVA_138_SSU_NR_99/rRNAClassifier.properties --format fixRank --outputFile /kb/module/work/tmp/kb_rdp_cls_7efbd0a3-e4d1-41ee-a9c6-0ae76ecfa3f5/return/RDP_Classifier_output/out_fixRank.tsv</code></p>
+[%
+
+taxonomy_content = BLOCK; %]
+# insert full Plotly javascript here instead
+<div id="imgLink">
+<p><a href="sunburst_plotly.html" target="_blank"><img alt="sunburst.png" src="fig/sunburst.png" title="Open to interact"></a></p>
+</div>
+[%
+
+bootstrap_histogram_content = BLOCK; %]
+<div id="imgLink">
+<p><a href="sunburst_plotly.html" target="_blank"><img alt="sunburst.png" src="fig/sunburst.png" title="Open to interact"></a></p>
+</div>
+[%
+
+bootstrap_pie_content = BLOCK; %]
+<div id="imgLink">
+<p><a href="sunburst_plotly.html" target="_blank"><img alt="sunburst.png" src="fig/sunburst.png" title="Open to interact"></a></p>
+</div>
+[%
+
+[% WRAPPER page_wrapper
+    title = "RDP Classifier Results"
+    page_content = [
+        {
+          name              => "Commands",
+          name_lc           => "commands_tab",
+          rendered_content  => commands_content,
+        },
+        {
+          name              => "Taxonomy Assignments", # this one active
+          name_lc           => "taxonomy_tab",
+          rendered_content  => taxonomy_content,
+        },
+        {
+          name              => "Bootstrap Histogram",
+          name_lc           => "bootstrap_histogram_tab",
+          rendered_content  => bootstrap_histogram_content,
+        },
+        {
+          name              => "Bootstrap Pie",
+          name_lc           => "bootstrap_pie_tab",
+          rendered_content  => bootstrap_pie_content,
+        }
+    ];
+    tabbed_layout( page_content = page_content );
+ %]
+
+[% END %]
