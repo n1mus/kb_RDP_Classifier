@@ -158,27 +158,6 @@ def do_histogram(png_flpth, html_flpth):
                 ),
             ))
 
-    '''
-    conf_all = []
-    for conf_col in conf_cols:
-        conf_all += df[conf_col].to_list()
-    h = np.histogram(conf_all, range=[0,1], bins=10)[0]
-    fig.add_trace(
-        go.Histogram(
-            x=conf_all, 
-            name='pooled', 
-            histnorm='probability', 
-            xbins={'start': 0, 'end': 1, 'size': 0.1},
-            marker_color='black',
-            customdata=list(zip(bin_s_l, h)),
-            hovertemplate=hovertemplate % (
-                'Pooled',
-                'pooled',
-                len(conf_all)
-            )
-        ))
-    '''
-
     fig.update_layout(
         title=dict(
             text='Bootstrap Confidence Histogram, <br> By Rank',
@@ -347,7 +326,7 @@ class HTMLReportWriter:
         iframe_s = (
             '<iframe src="%s" title="plotly" '
             'scrolling="no" seamless="seamless" '
-            f'height="{IFRAME_HEIGHT}px" width="100%%" '
+            'height="100%%" width="100%%" '
             'style="border:none;">'
             '</iframe>\n'
         )

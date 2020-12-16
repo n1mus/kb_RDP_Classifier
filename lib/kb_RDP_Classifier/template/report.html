@@ -44,6 +44,8 @@ div.tab button.active {
     -webkit-animation: fadeEffect 1s;
     animation: fadeEffect 1s;
     border-top: none;
+    height: 100%;
+    width: 100%;
 }
 
 /* Fade in tabs */
@@ -63,6 +65,18 @@ border: 1px solid blue
 }
 #imgLink img:hover {                                                                                 
 outline: 2px solid blue                                                                            
+}
+
+
+/* Allows containers to fill up 100% w/h of body */
+body {
+position: absolute;
+top: 0;
+bottom: 0;
+width: 100%;
+}
+
+html {
 }
 
 </style>
