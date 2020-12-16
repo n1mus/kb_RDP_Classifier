@@ -1,10 +1,10 @@
 #
 # define display information
 #
-name: Classify rRNA with taxonomy using na&iuml;ve Bayes with RDP Classifier v2.13
+name: Classify rRNA with taxonomy using na&iuml;ve Bayes with RDP Classifier - v2.13
 
 tooltip: |
-    Promptly classify rRNA, in linear time, with bootstrap confidence, against SSU or LSU datasets
+    Classify sequences in linear time with bootstrap confidence against SSU or LSU reference databases
 
 screenshots: []
 

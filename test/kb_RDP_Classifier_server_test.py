@@ -28,7 +28,7 @@ from mocks import * # upas, mocks ...
 ######### TOGGLE PATCH ###############
 ######################################
 ###################################### 
-do_patch = True # toggle patching for tests that can run independently of it
+do_patch = False # toggle patching for tests that can run independently of it
 
 if do_patch:
     patch_ = patch
@@ -628,7 +628,7 @@ unit_tests = [ # environment and patch-toggling independent
     'test_run_check', 'test_params', 
      'test_parse_filterByConf', 'test_parse_shortSeq',
     'test_AmpliconMatrix_noRowAttrMap_AttributeMapping', 'test_AmpliconMatrix_wRowAttrMap_AttributeMapping',
-    'test_report'
+    'test_report',
 ]
 ci_tests = [ # integration tests
     'test_large',
@@ -641,7 +641,7 @@ ci_tests = [ # integration tests
 appdev_tests = [ # integration tests
 ]
 
-run_tests = ['test_report'] 
+run_tests = ['test_default_params'] 
 
 for test in all_tests:
         if test not in run_tests:

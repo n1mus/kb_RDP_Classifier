@@ -21,6 +21,7 @@ pd.set_option('display.max_colwidth', 14)
 
 
 #DEFAULT_PNG_SHAPE = (500, 700) # plotly's
+REPORT_HEIGHT= 800 # px
 MAX_DATA = 300 # threshold for static
 DO_STATIC = False #True # toggle the hiding behind static thing
 
@@ -256,11 +257,11 @@ def do_sunburst(png_flpth, html_flpth):
         title_x=0.5,
     )
 
-    fig.write_html(html_flpth)#, default_height=1000) # TODO zoom a little?
+    fig.write_html(html_flpth)
 
     if DO_STATIC and len(names) > MAX_DATA:# whether to hide behind static image
 
-        fig.write_image(png_flpth, width=900, height=900)
+        fig.write_image(png_flpth, width=900, height=REPORT_HEIGHT)
         return True
 
     else:
@@ -344,7 +345,7 @@ class HTMLReportWriter:
         iframe_s = (
             '<iframe src="%s" title="plotly" '
             'scrolling="no" seamless="seamless" '
-            'height="800px" width="100%%" '
+            f'height="{REPORT_HEIGHT}px" width="100%%" '
             'style="border:none;">'
             '</iframe>\n'
         )

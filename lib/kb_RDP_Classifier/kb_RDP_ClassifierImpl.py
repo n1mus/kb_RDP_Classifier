@@ -18,7 +18,7 @@ from installed_clients.KBaseReportClient import KBaseReport
 from installed_clients.GenericsAPIClient import GenericsAPI
 
 from .impl.params import Params
-from .impl.report import HTMLReportWriter
+from .impl import report
 from .impl.globals import reset_Var, Var
 from .impl.kbase_obj import  AmpliconMatrix, AttributeMapping
 from .impl.error import *
@@ -172,7 +172,7 @@ class kb_RDP_Classifier:
             msg = (
                 "Input AmpliconMatrix does not have a row AttributeMapping to assign traits to. "
                 "A new one will be created"
-            )
+            ) # TODO maybe get rid of and specify 'created' in  objects_created
             logging.warning(msg)
             Var.warnings.append(msg)
 
@@ -304,7 +304,7 @@ class kb_RDP_Classifier:
         ####
         #####
 
-        hrw = HTMLReportWriter(
+        hrw = report.HTMLReportWriter(
             cmd_l=[cmd_fixRank_shortSeq, cmd_filterByConf]
         )
 
@@ -338,13 +338,14 @@ class kb_RDP_Classifier:
             'direct_html_link_index': 0,
             'file_links': file_links,
             'workspace_name': params['workspace_name'],
+            'html_window_height': report.REPORT_HEIGHT,
         }
 
-        report = Var.kbr.create_extended_report(params_report)
+        report_obj = Var.kbr.create_extended_report(params_report)
 
         output = {
-            'report_name': report['name'],
-            'report_ref': report['ref'],
+            'report_name': report_obj['name'],
+            'report_ref': report_obj['ref'],
         }
 
         #END run_classify
