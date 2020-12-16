@@ -28,7 +28,7 @@ from mocks import * # upas, mocks ...
 ######### TOGGLE PATCH ###############
 ######################################
 ###################################### 
-do_patch = False # toggle patching for tests that can run independently of it
+do_patch = True # toggle patching for tests that can run independently of it
 
 if do_patch:
     patch_ = patch

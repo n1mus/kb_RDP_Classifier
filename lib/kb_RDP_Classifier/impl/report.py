@@ -22,9 +22,11 @@ pd.set_option('display.max_colwidth', 14)
 
 #DEFAULT_PNG_SHAPE = (500, 700) # plotly's
 REPORT_HEIGHT= 800 # px
+IFRAME_HEIGHT = REPORT_HEIGHT - 30
 MAX_DATA = 300 # threshold for static
 DO_STATIC = False #True # toggle the hiding behind static thing
 
+# TODO (nice-to-have) separate plotly js library into dir
 # TODO testing graph info
 
 # TODO histogram 50by30 domain fcked
@@ -108,7 +110,7 @@ def do_histogram(png_flpth, html_flpth):
     hovertemplate = (
         'Rank: %s <br>'
         'Proportion of %s taxa: %%{y:.4g} <br>'
-        'Confidence bin: %%{customdata[0]} <br>'
+        'Confidence bin: %%{customdata[0]} <br>' # TODO confidence before proportion
         'Amplicon count: %%{customdata[1]}/%d <br>'
         '<extra></extra>'
     )
@@ -261,7 +263,7 @@ def do_sunburst(png_flpth, html_flpth):
 
     if DO_STATIC and len(names) > MAX_DATA:# whether to hide behind static image
 
-        fig.write_image(png_flpth, width=900, height=REPORT_HEIGHT)
+        fig.write_image(png_flpth, width=900, height=IFRAME_HEIGHT)
         return True
 
     else:
@@ -345,7 +347,7 @@ class HTMLReportWriter:
         iframe_s = (
             '<iframe src="%s" title="plotly" '
             'scrolling="no" seamless="seamless" '
-            f'height="{REPORT_HEIGHT}px" width="100%%" '
+            f'height="{IFRAME_HEIGHT}px" width="100%%" '
             'style="border:none;">'
             '</iframe>\n'
         )
@@ -395,6 +397,12 @@ class HTMLReportWriter:
 
 
 '''
+Fullscreen button
+https://www.w3schools.com/howto/howto_js_fullscreen.asp
+https://www.w3schools.com/howto/tryit.asp?filename=tryhow_js_fullscreen
+https://codepen.io/ssk7833/pen/mVOXXp
+
+
 Example tabs:
 -----------------------
 

@@ -165,17 +165,9 @@ class kb_RDP_Classifier:
         #####
 
         amp_mat = AmpliconMatrix(params['amp_mat_upa'])
-
         row_attr_map_upa = amp_mat.obj.get('row_attributemapping_ref')
 
-        if row_attr_map_upa is None:
-            msg = (
-                "Input AmpliconMatrix does not have a row AttributeMapping to assign traits to. "
-                "A new one will be created"
-            ) # TODO maybe get rid of and specify 'created' in  objects_created
-            logging.warning(msg)
-            Var.warnings.append(msg)
-
+        create_row_attr_map = row_attr_map_upa is None
         row_attr_map = AttributeMapping(row_attr_map_upa, amp_mat=amp_mat)  
 
 
@@ -284,8 +276,20 @@ class kb_RDP_Classifier:
         amp_mat_upa_new = amp_mat.save(name=params.getd('output_name'))
 
         objects_created = [
-            {'ref': row_attr_map_upa_new, 'description': 'Added or updated attribute `%s`' % attribute},
-            {'ref': amp_mat_upa_new, 'description': 'Updated row AttributeMapping reference'},
+            dict(
+                ref=row_attr_map_upa_new, 
+                description=(
+                    '%s attribute `%s`'
+                    % (
+                        ('Created' if create_row_attr_map else 'Updated'),
+                        attribute
+                    )
+                )
+            ),
+            dict(
+                ref=amp_mat_upa_new, 
+                description='Updated row AttributeMapping reference'
+            ),
         ]
 
 
