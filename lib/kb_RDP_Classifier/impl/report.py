@@ -1,5 +1,6 @@
 import plotly.express as px
 import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 import pandas as pd
 import numpy as np
 import sys, os
@@ -21,10 +22,10 @@ pd.set_option('display.max_colwidth', 14)
 
 
 #DEFAULT_PNG_SHAPE = (500, 700) # plotly's
-REPORT_HEIGHT= 800 # px
+REPORT_HEIGHT= 1000 # px, report window in app cell
 IFRAME_HEIGHT = REPORT_HEIGHT - 30
 MAX_DATA = 300 # threshold for static
-DO_STATIC = False #True # toggle the hiding behind static thing
+DO_STATIC = True #True # toggle the hiding behind static thing
 
 # TODO (nice-to-have) separate plotly js library into dir
 # TODO testing graph info
@@ -33,6 +34,7 @@ DO_STATIC = False #True # toggle the hiding behind static thing
 # TODO pie 0s pile up onto title, but rotating makes labels overlap
 # TODO pie better hovertemplate
 # TODO sunburst make sure phyla colors don't border
+# TODO sunburst open interactivity in iframe https://www.w3schools.com/html/tryit.asp?filename=tryhtml_iframe_target
 
 
 
@@ -40,7 +42,9 @@ DO_STATIC = False #True # toggle the hiding behind static thing
 ####################################################################################################
 ####################################################################################################
 ####################################################################################################
-def do_pie(png_flpth, html_flpth):
+def do_pie_hist(html_flpth):
+
+    palette = px.colors.qualitative.D3
 
     logging.info('Generating pie charts')
 
@@ -76,70 +80,43 @@ def do_pie(png_flpth, html_flpth):
     counts = {tax_lvl: count for tax_lvl, count in counts.items() if count != 0}
 
     #
-    fig = go.Figure(data=[go.Pie(
+    trace0 = go.Pie(
         labels=list(counts.keys())[::-1], # rev so color matches hist
         values=list(counts.values())[::-1], 
         textinfo='label+percent', 
+        hovertemplate=(
+            '%{label} <br>'
+            '%{percent} <br>'
+            '%{value}/' + str(df.shape[0]) + ' amplicons'
+            '<extra></extra>'
+        ),
         sort=False,
         #rotation=90, # try to get 0s out of title. this num means 'genus' sector will end at 90 and 'family' will begin at 90
-    )])
-    
-    fig.update_layout(
-        title=dict(
-            text='Cutoff Rank (conf=%s)' % Var.params.prose_args['conf'],
-            x=0.5,
-        ),
-        showlegend=False
+        showlegend=False,
+        marker_colors=palette
     )
-
-    #fig.write_image(png_flpth)
-    fig.write_html(html_flpth)
-
-    return False
-
-
-####################################################################################################
-####################################################################################################
-####################################################################################################
-def do_histogram(png_flpth, html_flpth):
-
+    
     logging.info('Generating histogram') 
-
-    df, tax_lvls, conf_cols = app_file.parse_fixRank()
 
     hovertemplate = (
         'Rank: %s <br>'
-        'Proportion of %s taxa: %%{y:.4g} <br>'
         'Confidence bin: %%{customdata[0]} <br>' # TODO confidence before proportion
+        'Proportion of amplicons: %%{y:.4g} <br>'
         'Amplicon count: %%{customdata[1]}/%d <br>'
         '<extra></extra>'
     )
     bin_s_l = ['[%g, %g)' % (i/10, i/10+.1) for i in range(10)]
 
-    '''
-    def filtered_customdata(h, bin_s_l):
-        h_filtered = [ct for ct in h if ct>0]
-        bin_s_l_filtered = [bin_s for ct, bin_s in zip(h, bin_s_l) if ct>0]
-        assert len(bin_s_l_filtered) == len(np.nonzero(h)[0])
-        assert len(h_filtered) == len(np.nonzero(h)[0])
-        return list(zip(bin_s_l_filtered, h_filtered, ))
-    '''
-
-    fig = go.Figure()
-    for conf_col, tax_lvl in zip(conf_cols[::-1], tax_lvls[::-1]):
+    trace1_l = []
+    for i, (conf_col, tax_lvl) in enumerate(zip(conf_cols[::-1], tax_lvls[::-1])):
         conf_l = df[conf_col].tolist()
         conf_l = [conf if conf<1 else conf-1e-8 for conf in conf_l] # nudge 1.0 confidences below
         h = np.histogram(conf_l, range=[0,1], bins=10)[0]
         #if tax_lvl != 'domain':
         #    continue
         customdata = list(zip(bin_s_l, h)) 
-        '''(
-            filtered_customdata(h, bin_s_l)
-            if h[0] == 0 or h[-1] == 0 # starting with 0s seems to break binning start,
-            else list(zip(bin_s_l, h))
-        )'''
         #dprint('tax_lvl','conf_l','h','customdata',max_lines=None,run='py')
-        fig.add_trace(
+        trace1_l.append(
             go.Histogram(
                 x=conf_l, 
                 xbins=dict(
@@ -153,41 +130,58 @@ def do_histogram(png_flpth, html_flpth):
                 customdata=customdata,
                 hovertemplate=hovertemplate % (
                     tax_lvl.title(),
-                    tax_lvl,
+                    #tax_lvl,
                     len(conf_l),
                 ),
+                marker_color=palette[i],
             ))
 
+    # subplots
+
+    fig = make_subplots(
+        rows=2, 
+        cols=1,
+        subplot_titles=(
+            'Taxonomy Cutoff Rank (conf=%s)' % Var.params.prose_args['conf'],
+            'Bootstrap Confidence Histogram, <br> By Rank',
+        ),
+        specs=[
+            [dict(type='pie')],
+            [dict(type='xy')],
+        ],
+        vertical_spacing=0.1,
+    )
+
+    fig.add_trace(trace0, row=1, col=1)
+    for trace1 in trace1_l:
+        fig.add_trace(trace1, row=2, col=1)
+
+    fig.update_xaxes(
+        row=2,
+        col=1,
+        tickmode='linear',
+        tick0=0,
+        dtick=0.1,
+        range=[0,1],
+        title_text='Bootstrap Confidence',
+    )
+
+    fig.update_yaxes(
+        row=2,
+        col=1,
+        tick0=0,
+        dtick=0.2,
+        range=[0,1],
+        title_text='Proportion of Amplicons',
+    )
+
     fig.update_layout(
-        title=dict(
-            text='Bootstrap Confidence Histogram, <br> By Rank',
-            x=0.5,
-        ),
-        xaxis=dict( 
-            tickmode='linear',
-            tick0=0,
-            dtick=0.1,
-            range=[0,1],
-            title_text='Bootstrap Confidence',
-        ),
-        yaxis=dict(
-            tick0=0,
-            dtick=0.1,
-            range=[0,1],
-            title_text='Proportion of Taxa',
-        ),
-        legend=dict( # move legend to left since ifrom cuts off text when right 
-            x=-0.1,
-            xanchor='right',
-            traceorder='grouped',
+        legend=dict( 
             itemclick='toggleothers',
             itemdoubleclick='toggle',
-            #title_text='TITLE0123456789',
-            #title_side='left',
         ),
     )
 
-    #fig.write_image(png_flpth, width=int(DEFAULT_PNG_SHAPE[1] * 1.5))
     fig.write_html(html_flpth)
 
     return False
@@ -197,7 +191,7 @@ def do_histogram(png_flpth, html_flpth):
 ####################################################################################################
 ####################################################################################################
 ####################################################################################################
-def do_sunburst(png_flpth, html_flpth):
+def do_sunburst(html_flpth,png_flpth):
     # TODO don't show phylum on hover text/label (but keep using it for color)
 
     logging.info('Generating sunburst')
@@ -264,58 +258,46 @@ def do_sunburst(png_flpth, html_flpth):
 
 class HTMLReportWriter:
 
-    tab_div_s = (
-        '<div id="%s" class="tabcontent" style="display: %s;">\n'
-        '%s'
-        '</div>\n'
-    )
-
     def __init__(self, cmd_l):
         '''
         '''
         self.cmd_l = cmd_l
         self.tabdiv_l = []
 
+        self.replacements = {}
 
 
-    def _compile_cmd_tab(self):
+    def _compile_cmd_tab_body(self):
         
         txt = ''
 
         for cmd in self.cmd_l:
             txt += '<p><code>' + cmd + '</code></p>\n'
 
-        txt = self.tab_div_s % (
-            'commands',
-            'none',
-            txt,
-        )
-
-        self.tabdiv_l.append(txt)
+        self.replacements['CMD_TAG'] = txt
 
 
-    def _compile_figure_tabs(self):
+    def _compile_figure_tab_bodies(self):
         #
         self.fig_dir = os.path.join(Var.report_dir, 'fig')
         os.mkdir(self.fig_dir)
 
         #
-        figname_l = ['sunburst', 'histogram', 'pie']
-        png_flpth_l = [os.path.join(self.fig_dir, figname + '.png') for figname in figname_l]
-        html_flpth_l = [os.path.join(Var.report_dir, figname + '.html') for figname in figname_l]
-        figfunc_l = ['do_' + figname for figname in figname_l]
-        hide_l = []
+        pie_hist_html_flpth = os.path.join(Var.report_dir, 'pie_hist.html')
+        sunburst_html_flpth = os.path.join(Var.report_dir, 'sunburst.html')
+        sunburst_png_flpth = os.path.join(Var.report_dir, 'sunburst.png')
 
-        # call plotly-doing functions
-        for png_flpth, html_flpth, figfunc in zip(png_flpth_l, html_flpth_l, figfunc_l):
-            hide_b = globals()[figfunc](png_flpth, html_flpth)
-            hide_l.append(hide_b)
 
+        #
+        do_pie_hist(pie_hist_html_flpth)
+        hide_b = do_sunburst(sunburst_html_flpth, sunburst_png_flpth)
+
+
+        #
         def get_relative_fig_path(flpth):
             return '/'.join(flpth.split('/')[-2:])
 
         #
-
         link_out_img_s = (
             '<div id="imgLink">\n'
             '<a href="%s" target="_blank">\n'
@@ -324,48 +306,40 @@ class HTMLReportWriter:
             '</div>\n'
         )
         iframe_s = (
-            '<iframe src="%s" title="plotly" '
-            'scrolling="no" seamless="seamless" '
-            'height="100%%" width="100%%" '
+            '<iframe src="%s" '
+            'scrolling="no" '
+            'seamless="seamless" '
             'style="border:none;">'
             '</iframe>\n'
         )
 
+        #
+        self.replacements['PIE_HIST_TAG'] = (
+            iframe_s % os.path.basename(pie_hist_html_flpth)
+        )
 
-        # make a div for each fig
-        for figname, png_flpth, html_flpth, hide_b in zip(figname_l, png_flpth_l, html_flpth_l, hide_l):
-            if hide_b:
-                intxt = link_out_img_s % (
-                    os.path.basename(html_flpth),
-                    os.path.basename(png_flpth),
-                    get_relative_fig_path(png_flpth),
-                )
-            else:
-                intxt = iframe_s % os.path.basename(html_flpth)
-
-            divtxt = self.tab_div_s % (
-                figname,
-                ('block' if figname == 'sunburst' else 'none'),
-                intxt,
+        self.replacements['SUNBURST_TAG'] = (
+            iframe_s % os.path.basename(sunburst_html_flpth)
+            if not hide_b else
+            link_out_img_s % (
+                os.path.basename(sunburst_html_flpth),
+                get_relative_fig_path(sunburst_png_flpth),
+                get_relative_fig_path(sunburst_png_flpth),
             )
-
-            self.tabdiv_l.append(divtxt)
-
+        )
 
 
     def write(self):
-        self._compile_cmd_tab()
-        self._compile_figure_tabs()
-
+        self._compile_cmd_tab_body()
+        self._compile_figure_tab_bodies()
         
         html_flpth = os.path.join(Var.report_dir, 'report.html')
 
         with open(Var.report_template_flpth) as src_fh:
             with open(html_flpth, 'w') as dst_fh:
                 for line in src_fh:
-                    if line.strip() == 'REPLACE_TAG':
-                        for divtxt in self.tabdiv_l:
-                            dst_fh.write(divtxt + '\n')
+                    if line.strip() in self.replacements:
+                        dst_fh.write(self.replacements[line.strip()])
                     else:
                         dst_fh.write(line)
 

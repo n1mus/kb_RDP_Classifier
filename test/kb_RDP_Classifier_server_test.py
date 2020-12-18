@@ -20,7 +20,7 @@ from kb_RDP_Classifier.impl.globals import Var
 from kb_RDP_Classifier.impl.kbase_obj import AmpliconMatrix, AttributeMapping
 from kb_RDP_Classifier.impl.error import * # exceptions 
 from kb_RDP_Classifier.impl import app_file
-from kb_RDP_Classifier.impl.report import HTMLReportWriter
+from kb_RDP_Classifier.impl import report
 from mocks import * # upas, mocks ...
 
 ######################################
@@ -387,6 +387,7 @@ class kb_RDP_ClassifierTest(unittest.TestCase):
         run_dir = os.path.join(self.scratch, 'test_report_' + str(uuid.uuid4()))
         os.mkdir(run_dir)
 
+        '''
         ## Large Report
         Var.report_dir = os.path.join(run_dir, 'report_enigma17770by511')
         os.mkdir(Var.report_dir)
@@ -397,7 +398,7 @@ class kb_RDP_ClassifierTest(unittest.TestCase):
             conf=0.8111
         ))
 
-        html_links = HTMLReportWriter(
+        html_links = report.HTMLReportWriter(
             cmd_l = ['test,', 'test,', 'large']
         ).write()
 
@@ -412,7 +413,7 @@ class kb_RDP_ClassifierTest(unittest.TestCase):
                 conf=conf
             ))
 
-            html_links = HTMLReportWriter(
+            html_links = report.HTMLReportWriter(
                 cmd_l = ['test,', 'test,', 'small', 'conf=%g' % conf]
             ).write()
 
@@ -428,11 +429,28 @@ class kb_RDP_ClassifierTest(unittest.TestCase):
                 conf=conf,
             ))
 
-            html_links = HTMLReportWriter(
+            html_links = report.HTMLReportWriter(
                 cmd_l = ['test,', 'test,', 'dummy', 'conf=%g' % conf]
             ).write()
+        '''
 
-        ## Small Pie
+        ## Bootstrap Confidences
+        out_dir = os.path.join(testData_dir, 'by_dataset_input/enigma50by30/return/RDP_Classifier_output')
+        Var.out_fixRank_flpth = os.path.join(out_dir, 'out_fixRank.tsv')
+        Var.out_filterByConf_flpth = os.path.join(out_dir, 'out_filterByConf.tsv')
+
+        Var.report_dir = os.path.join(run_dir, 'report_bootstrap_conf_together')
+        os.mkdir(Var.report_dir)
+        Var.params = Params(dict(
+            conf=0.555555555,
+        ))
+
+        html_links = report.HTMLReportWriter(
+            cmd_l = ['test,', 'test,']
+        ).write()
+
+ 
+        
 
 
 
@@ -641,7 +659,8 @@ ci_tests = [ # integration tests
 appdev_tests = [ # integration tests
 ]
 
-run_tests = ['test_default_params'] 
+#run_tests = ['test_report'] 
+run_tests = ['test_custom'] 
 
 for test in all_tests:
         if test not in run_tests:

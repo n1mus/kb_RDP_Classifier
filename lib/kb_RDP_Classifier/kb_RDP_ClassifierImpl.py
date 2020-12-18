@@ -21,7 +21,6 @@ from .impl.params import Params
 from .impl import report
 from .impl.globals import reset_Var, Var
 from .impl.kbase_obj import  AmpliconMatrix, AttributeMapping
-from .impl.error import *
 from .impl import app_file 
 from .util.debug import dprint
 from .util.cli import run_check

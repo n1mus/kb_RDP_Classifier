@@ -79,28 +79,57 @@ width: 100%;
 html {
 }
 
+
+
+.outerbox {
+        width: 100%;
+        height: 100%;
+}
+
+iframe {
+        width: 100%;
+        height: 100%;
+}
+
 </style>
 </head>
-<body>
+<body onload="undisplay_pie_hist()">
+<div class="outerbox">
+
+
+
 
 <div class="tab">
 <button class="tablinks" onclick="openTab(event, &#39;commands&#39;)">Cmd</button>
-<button class="tablinks" onclick="openTab(event, &#39;pie&#39;)">Bootstrap Confidence Pie</button>
-<button class="tablinks" onclick="openTab(event, &#39;histogram&#39;)">Bootstrap Confidence Histogram</button>
+<button class="tablinks" onclick="openTab(event, &#39;pie_hist&#39;)">Bootstrap Confidence</button>
 <button class="tablinks active" onclick="openTab(event, &#39;sunburst&#39;)">Taxonomy</button>
 </div>
 
 
-REPLACE_TAG
+<div id="commands" class="tabcontent" style="display: none;">                                       
+CMD_TAG
+</div>                                                                                              
+                                                                                                    
+<div id="sunburst" class="tabcontent" style="display: block;">                                      
+SUNBURST_TAG
+</div>                                                                                              
+                                                                                                    
+<div id="pie_hist" class="tabcontent" style="display: block;">                                            
+PIE_HIST_TAG
+</div> 
 
 
-<h2>
-Note: plots still need work because plotly is buggy
-</h2>
 
 
+
+</div>
 </body>
 <script>
+
+function undisplay_pie_hist() {
+    document.getElementById("pie_hist").style.display = "none";
+}
+
 function openTab(evt, tabName) {
     var i, tabcontent, tablinks;
     tabcontent = document.getElementsByClassName("tabcontent");
@@ -115,7 +144,5 @@ function openTab(evt, tabName) {
     evt.currentTarget.className += " active";
 }
 
-// Get the element with id="defaultOpen" and click on it
-document.getElementById("defaultOpen").click();
 </script>
 </html>
