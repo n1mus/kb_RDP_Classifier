@@ -18,28 +18,10 @@ from kb_RDP_Classifier.util.cli import run_check, NonZeroReturnException
 from kb_RDP_Classifier.impl.params import Params
 from kb_RDP_Classifier.impl.globals import Var
 from kb_RDP_Classifier.impl.kbase_obj import AmpliconMatrix, AttributeMapping
-from kb_RDP_Classifier.impl.error import * # exceptions 
+from kb_RDP_Classifier.impl.comm import * # exceptions 
 from kb_RDP_Classifier.impl import app_file
 from kb_RDP_Classifier.impl import report
 from mocks import * # upas, mocks ...
-
-######################################
-######################################
-######### TOGGLE PATCH ###############
-######################################
-###################################### 
-do_patch = True # toggle patching for tests that can run independently of it
-
-if do_patch:
-    patch_ = patch
-    patch_dict_ = patch.dict
-else:
-    patch_ = lambda *a, **k: lambda f: f
-    patch_dict_ = lambda *a, **k: lambda f: f
-######################################
-######################################
-######################################
-######################################
 
 
 
@@ -275,9 +257,9 @@ class kb_RDP_ClassifierTest(unittest.TestCase):
 
         ##
         ## write new attribute/source
-        ind_0 = attr_map.get_attribute_slot_warn('biome', 'testing')
+        ind_0, overwrite_0 = attr_map.get_add_attribute_slot('biome', 'testing')
         self.assertTrue(ind_0 == 2)
-        self.assertTrue(len(Var.warnings) == 0)
+        self.assertTrue(overwrite_0 == False, json.dumps(attr_map.obj, indent=3))
 
         attr_map.update_attribute(ind_0, {
             "amplicon_id_0": "dummy0",
@@ -296,10 +278,9 @@ class kb_RDP_ClassifierTest(unittest.TestCase):
 
         ##
         ## overwrite attribute/source
-        nwarn0 = len(Var.warnings)
-        ind_1 = attr_map.get_attribute_slot_warn('celestial body', 'upload')
-        self.assertTrue(ind_1 == 0)
-        self.assertTrue(len(Var.warnings) - nwarn0 == 1, json.dumps(attr_map.obj, indent=3))
+        ind_1, overwrite_1 = attr_map.get_add_attribute_slot('celestial body', 'upload')
+        self.assertTrue(ind_1 == 0, json.dumps(attr_map.obj, indent=3))
+        self.assertTrue(overwrite_1 == True, json.dumps(attr_map.obj, indent=3))
 
         attr_map.update_attribute(ind_1, {
             "amplicon_id_0": "dummy1",
@@ -331,7 +312,7 @@ class kb_RDP_ClassifierTest(unittest.TestCase):
  
     ####################
     ####################
-    @patch.dict('kb_RDP_Classifier.impl.kbase_obj.Var', values={'dfu': get_mock_dfu('dummy10by8'), 'warnings': ['start']})
+    @patch.dict('kb_RDP_Classifier.impl.kbase_obj.Var', values={'dfu': get_mock_dfu('dummy10by8')})
     def test_AmpliconMatrix_noRowAttrMap_AttributeMapping(self):
         '''
         Test row AttributeMapping behavior when AmpliconMatrix has now row AttributeMapping
@@ -340,17 +321,16 @@ class kb_RDP_ClassifierTest(unittest.TestCase):
             self.scratch, 
             'test_AmpliconMatix_noRowAttributeMapping_AttributeMapping_' + str(uuid.uuid4())
         )
+        Var.params = Params({})
 
         amp_mat = AmpliconMatrix(dummy10by8_AmpMat_noRowAttrMap)
         attr_map = AttributeMapping(amp_mat.obj.get('row_attributemapping_ref'), amp_mat)
 
-        self.assertTrue(len(Var.warnings) == 1, Var.warnings)
-
         ##
         ## write new attribute/source
-        ind_0 = attr_map.get_attribute_slot_warn('biome', 'testing')
+        ind_0, overwrite_0 = attr_map.get_add_attribute_slot('biome', 'testing')
         self.assertTrue(ind_0 == 0)
-        self.assertTrue(len(Var.warnings) == 1)
+        self.assertTrue(overwrite_0 == False, json.dumps(attr_map.obj, indent=3))
 
         attr_map.update_attribute(ind_0, {
             "amplicon_id_0": "dummy0",
@@ -387,7 +367,6 @@ class kb_RDP_ClassifierTest(unittest.TestCase):
         run_dir = os.path.join(self.scratch, 'test_report_' + str(uuid.uuid4()))
         os.mkdir(run_dir)
 
-        '''
         ## Large Report
         Var.report_dir = os.path.join(run_dir, 'report_enigma17770by511')
         os.mkdir(Var.report_dir)
@@ -395,12 +374,13 @@ class kb_RDP_ClassifierTest(unittest.TestCase):
         Var.out_fixRank_flpth = os.path.join(out_dir, 'out_fixRank.tsv')
         Var.out_filterByConf_flpth = os.path.join(out_dir, 'out_filterByConf.tsv')
         Var.params = Params(dict(
-            conf=0.8111
+            conf=0.7777
         ))
 
         html_links = report.HTMLReportWriter(
-            cmd_l = ['test,', 'test,', 'large']
+            cmd_l = ['test,', 'test,', 'large'] * 10
         ).write()
+
 
         ## Small Reports
         out_dir = os.path.join(testData_dir, 'by_dataset_input/enigma50by30/return/RDP_Classifier_output')
@@ -417,6 +397,7 @@ class kb_RDP_ClassifierTest(unittest.TestCase):
                 cmd_l = ['test,', 'test,', 'small', 'conf=%g' % conf]
             ).write()
 
+
         ## Dummy Reports
         out_dir = os.path.join(testData_dir, 'by_dataset_input/dummy10by8/return/RDP_Classifier_output')
         Var.out_fixRank_flpth = os.path.join(out_dir, 'out_fixRank.tsv')
@@ -430,142 +411,28 @@ class kb_RDP_ClassifierTest(unittest.TestCase):
             ))
 
             html_links = report.HTMLReportWriter(
-                cmd_l = ['test,', 'test,', 'dummy', 'conf=%g' % conf]
+                cmd_l = ['test,', 'test,', 'dummy10by8', 'conf=%g' % conf]
             ).write()
-        '''
 
-        ## Bootstrap Confidences
-        out_dir = os.path.join(testData_dir, 'by_dataset_input/enigma50by30/return/RDP_Classifier_output')
-        Var.out_fixRank_flpth = os.path.join(out_dir, 'out_fixRank.tsv')
+
+        ## Tiny Reports -- for testing histogram
+        out_dir = os.path.join(testData_dir, 'by_dataset_input/dummyTiny/return/RDP_Classifier_output')
         Var.out_filterByConf_flpth = os.path.join(out_dir, 'out_filterByConf.tsv')
+        for i in range(5):
+            Var.out_fixRank_flpth = os.path.join(out_dir, 'out_fixRank%d.tsv' % i)
+            Var.report_dir = os.path.join(run_dir, 'report_dummyTiny_%d' % i)
+            os.mkdir(Var.report_dir)
+            Var.params = Params(dict(
+                conf=0.55555,
+            ))
 
-        Var.report_dir = os.path.join(run_dir, 'report_bootstrap_conf_together')
-        os.mkdir(Var.report_dir)
-        Var.params = Params(dict(
-            conf=0.555555555,
-        ))
+            with open(Var.out_fixRank_flpth) as fh:
+                fixRank_lines = fh.readlines()
 
-        html_links = report.HTMLReportWriter(
-            cmd_l = ['test,', 'test,']
-        ).write()
-
- 
-        
-
-
-
-
-
-####################################################################################################
-##################################### integration tests ############################################
-####################################################################################################
-
-    def _check_objects(self):
-        self.assertTrue(Var.amp_mat.obj.get('row_attributemapping_ref') is not None)
-        self.assertTrue(Var.amp_mat.obj.get('row_mapping') is not None)
-
-
-    ####################
-    ####################
-    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.DataFileUtil', new=lambda *a: get_mock_dfu('enigma17770by511'))
-    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.GenericsAPI', new=lambda *a, **k: get_mock_gapi('enigma17770by511'))
-    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.run_check', new=get_mock_run_check('enigma17770by511'))
-    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.KBaseReport', new=lambda *a: get_mock_kbr())
-    def test_large(self):
-        ret = self.serviceImpl.run_classify(
-            self.ctx, {
-                **self.params_ws,
-                'amp_mat_upa': enigma17770by511,
-            })
-        self._check_objects()   
-
-
-    ####################
-    ####################
-    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.DataFileUtil', new=lambda *a: get_mock_dfu('enigma50by30'))
-    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.GenericsAPI', new=lambda *a, **k: get_mock_gapi('enigma50by30'))
-    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.run_check', new=get_mock_run_check('enigma50by30'))
-    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.KBaseReport', new=lambda *a: get_mock_kbr())
-    def test_default_params(self):
-        ret = self.serviceImpl.run_classify(
-            self.ctx, {
-                **self.params_ws,
-                'amp_mat_upa': enigma50by30,
-            })
-        self._check_objects()
-
-    ####################
-    ####################
-    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.DataFileUtil', new=lambda *a: get_mock_dfu('enigma50by30'))
-    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.GenericsAPI', new=lambda *a, **k: get_mock_gapi('enigma50by30'))
-    #@patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.run_check', new=get_mock_run_check('enigma50by30'))
-    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.KBaseReport', new=lambda *a: get_mock_kbr())
-    def test_non_default_params(self):
-        ret = self.serviceImpl.run_classify(
-            self.ctx, {
-                **self.params_ws,
-                'amp_mat_upa': enigma50by30,
-                'output_name': 'an_output_name',
-                'rdp_clsf': {
-                    'conf': 0.222222222,
-                    'gene': 'fungallsu',
-                    'minWords': 5,
-                },
-            })
-
-        self._check_objects()
-
-    ####################
-    ####################
-    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.DataFileUtil', new=lambda *a: get_mock_dfu('enigma50by30_noAttrMaps_noSampleSet'))
-    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.GenericsAPI', new=lambda *a, **k: get_mock_gapi('enigma50by30_noAttrMaps_noSampleSet'))
-    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.run_check', new=get_mock_run_check('enigma50by30_noAttrMaps_noSampleSet'))
-    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.KBaseReport', new=lambda *a: get_mock_kbr())
-    def test_no_row_AttributeMapping(self):
-        ret = self.serviceImpl.run_classify(
-            self.ctx, {
-                **self.params_ws,
-                'amp_mat_upa': enigma50by30_noAttrMaps_noSampleSet,
-                'rdp_clsf': {
-                    'gene': '16srrna',
-                },
-            })
-        self._check_objects()
-
-
-    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.DataFileUtil', new=lambda *a: get_mock_dfu('enigma50by30_noAttrMaps_noSampleSet_tooShortSeqs'))
-    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.GenericsAPI', new=lambda *a, **k: get_mock_gapi('enigma50by30_noAttrMaps_noSampleSet'))
-    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.run_check', new=get_mock_run_check('enigma50by30_noAttrMaps_noSampleSet_tooShortSeqs'))
-    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.KBaseReport', new=lambda *a: get_mock_kbr())
-    ###################
-    ###################
-    def test_too_short_seq(self):
-        ret =  self.serviceImpl.run_classify(
-            self.ctx, {
-                **self.params_ws,
-                'amp_mat_upa': enigma50by30_noAttrMaps_noSampleSet_tooShortSeqs,
-                'rdp_clsf': {
-                    'gene': '16srrna',
-                },
-            })
-        self._check_objects()
-
-    ####################
-    ####################
-    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.DataFileUtil', new=lambda u: get_mock_dfu('enigma50by30_noAttrMaps_noSampleSet'))
-    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.GenericsAPI', new=lambda *a, **k: get_mock_gapi('enigma50by30_noAttrMaps_noSampleSet'))
-    #@patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.run_check', new=get_mock_run_check('enigma50by30_noAttrMaps_noSampleSet', non_default_gene='silva_138_ssu'))
-    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.KBaseReport', new=lambda u: get_mock_kbr())
-    def test_custom(self):
-        ret = self.serviceImpl.run_classify(
-            self.ctx, {
-                **self.params_ws,
-                'amp_mat_upa': enigma50by30_noAttrMaps_noSampleSet,
-                'rdp_clsf': {
-                    'gene': 'silva_138_ssu',
-                },
-            })
-        self._check_objects()
+            html_links = report.HTMLReportWriter(
+                cmd_l = ['test,', 'test,', 'dummyTiny', 'i=%d' % i] + fixRank_lines
+            ).write()
+           
 
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -574,43 +441,9 @@ class kb_RDP_ClassifierTest(unittest.TestCase):
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
     @classmethod
     def setUpClass(cls):
-        token = os.environ.get('KB_AUTH_TOKEN', None)
-        config_file = os.environ.get('KB_DEPLOYMENT_CONFIG', None)
-        cls.cfg = {}
-        config = ConfigParser()
-        config.read(config_file)
-        for nameval in config.items('kb_RDP_Classifier'):
-            cls.cfg[nameval[0]] = nameval[1]
-        # Getting username from Auth profile for token
-        authServiceUrl = cls.cfg['auth-service-url']
-        auth_client = _KBaseAuth(authServiceUrl)
-        user_id = auth_client.get_user(token)
-        # WARNING: don't call any logging methods on the context object,
-        # it'll result in a NoneType error
-        cls.ctx = MethodContext(None)
-        cls.ctx.update({'token': token,
-                        'user_id': user_id,
-                        'provenance': [
-                            {'service': 'kb_RDP_Classifier',
-                             'method': 'please_never_use_it_in_production',
-                             'method_params': []
-                             }],
-                        'authenticated': 1})
-        cls.wsURL = cls.cfg['workspace-url']
-        cls.wsClient = Workspace(cls.wsURL)
-        suffix = int(time.time() * 1000)
-        cls.wsName = "kb_RDP_Classifier_" + str(suffix)
-        cls.wsId = cls.wsClient.create_workspace({'workspace': cls.wsName})[0]                      
-        cls.params_ws = {                                                                           
-            'workspace_id': cls.wsId,                                                               
-            'workspace_name': cls.wsName,                                                           
-        } 
-        cls.serviceImpl = kb_RDP_Classifier(cls.cfg)
-        cls.scratch = cls.cfg['scratch']
-        cls.callback_url = os.environ['SDK_CALLBACK_URL']
+        cls.scratch = '/kb/module/work/tmp/'
 
     @classmethod
     def list_tests(cls):
@@ -618,14 +451,10 @@ class kb_RDP_ClassifierTest(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        if hasattr(cls, 'wsName'):
-            cls.wsClient.delete_workspace({'workspace': cls.wsName})
-            print('Test workspace was deleted')
         dec = '!!!' * 200
         print(dec,  "DO NOT FORGET TO GRAB HTML(S)", dec)
 
         skipped_tests = list(set(all_tests) - set(cls.list_tests()))
-        print('* do_patch:', do_patch)
         print('* All tests (%d): %s' % (len(all_tests), all_tests))
         print('* Tests skipped (%d): %s' % (len(skipped_tests), skipped_tests))
         print('* Tests run (%d): %s' % (len(cls.list_tests()), cls.list_tests()))
@@ -648,21 +477,12 @@ unit_tests = [ # environment and patch-toggling independent
     'test_AmpliconMatrix_noRowAttrMap_AttributeMapping', 'test_AmpliconMatrix_wRowAttrMap_AttributeMapping',
     'test_report',
 ]
-ci_tests = [ # integration tests
-    'test_large',
-    'test_default_params',
-    'test_non_default_params',
-    'test_no_row_AttributeMapping',
-    'test_too_short_seq',
-    'test_custom',
-]
-appdev_tests = [ # integration tests
-]
 
-#run_tests = ['test_report'] 
-run_tests = ['test_custom'] 
+run_tests = ['test_report'] 
+#run_tests = ['test_custom'] 
+#run_tests = ['test_large'] 
 
 for test in all_tests:
         if test not in run_tests:
-            delattr(kb_RDP_ClassifierTest, test)
+            #delattr(kb_RDP_ClassifierTest, test)
             pass

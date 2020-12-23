@@ -118,11 +118,11 @@ description : |
     </h2>
 
     <p>
-    Thanks to P. Weisenhorn for helpful comments and visualization suggestions.
-    Likewise, thanks to the Banfield lab for their helpful comments and visualization inspiration.
+    Thanks to the Banfield lab for their helpful comments and visualization inspiration.
+    Likewise, thanks to P. Weisenhorn for helpful comments and visualization suggestions.
     And thanks to the KBase team in general,
-    some or other of the engineers with distinction who probably deserve mention, 
-    for their ideas and help.
+    some or other of the unsung engineers who deserve mention, 
+    for their ideas, experience, and help.
     </p>
 
 
@@ -133,6 +133,8 @@ publications:
 
     -
         display-text: |
-
             Wang, Qiong et al. “Naive Bayesian classifier for rapid assignment of rRNA sequences into the new bacterial taxonomy.” Applied and environmental microbiology vol. 73,16 (2007): 5261-7. doi:10.1128/AEM.00062-07
 
+    -
+        display-text: |
+            Plotly Technologies Inc. Collaborative data science. Montréal, QC, 2015. https://plot.ly.

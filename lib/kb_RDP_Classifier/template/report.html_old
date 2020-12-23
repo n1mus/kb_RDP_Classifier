@@ -61,9 +61,7 @@ from {opacity: 0;}
 to {opacity: 1;}
 }
 
-/* Style images as links 
-TODO box shadow also signifies link
-*/
+/* Style images as links */
 img {
 /* TODO center image
 can't because the margins show as links
@@ -151,8 +149,11 @@ PIE_HIST_TAG
 </div>
 </body>
 <script>
-// Reload on tab click. 
-// Good for IFrame width issues. Plotly pie also has issues that reloading benefits
+
+function undisplay_pie_hist() {
+document.getElementById("pie_hist").style.display = "none";
+}
+
 function reloadIFrame(iframeid) {
 document.getElementById(iframeid).src += "";
 }

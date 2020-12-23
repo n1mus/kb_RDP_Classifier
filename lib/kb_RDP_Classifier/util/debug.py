@@ -15,7 +15,7 @@ subproc_run = functools.partial(
 TAG_WIDTH = 80
 MAX_LINES = 15
 
-def dprint(*args, run=False, json=True, where=False, time=False, max_lines=MAX_LINES, exit=False, 
+def dprint(*args, run='py', json=True, where=False, time=False, max_lines=MAX_LINES, exit=False, 
            subproc_run_kwargs={}, print_kwargs={}):
     '''Debug print'''
 

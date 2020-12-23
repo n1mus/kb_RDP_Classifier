@@ -9,7 +9,7 @@ import json
 
 from ..util.debug import dprint
 from .globals import Var
-from .error import * # exceptions and msgs
+from .comm import * # exceptions and msgs
 
 
 pd.set_option('display.max_rows', 100)
@@ -148,28 +148,28 @@ class AttributeMapping:
             'ontology_mapping_method': 'User curated',
         }
 
-        self.name = self.amp_mat.name + '.Amplicon_attributes' # TODO length checks
+        suffix = '.Amplicon_attributes'
+        if Var.params.getd('output_name') is not None:
+            self.name = Var.params.getd('output_name') + suffix
+        else:
+            self.name = self.amp_mat.name + suffix
+        # TODO length checks
 
 
 
-    def get_attribute_slot_warn(self, attribute: str, source: str) -> int:
+    def get_add_attribute_slot(self, attribute: str, source: str) -> tuple:
+        '''
+        Return (1) index, (2) overwrite
+        '''
 
         d = {'attribute': attribute, 'source': source}
 
         ind = -1 # if `attributes` list is empty
 
-        # check if already exists                               TODO if overwriting, should null out-of-access?
+        # check if already exists 
         for ind, attr_d in enumerate(self.obj['attributes']):
             if attr_d == d:
-                msg = (
-                    'Row AttributeMapping with name `%s` '
-                    'already has field with attribute `%s` and source `%s`. '
-                    'This field will be overwritten'
-                    % (self.name, attribute, source)
-                )
-                logging.warning(msg)
-                Var.warnings.append(msg)
-                return ind
+                return ind, True
 
         # append slot to `attributes`
         self.obj['attributes'].append(d)
@@ -178,7 +178,7 @@ class AttributeMapping:
         for attr_l in self.obj['instances'].values():
             attr_l.append(None)
 
-        return ind + 1
+        return ind + 1,  False
 
 
 

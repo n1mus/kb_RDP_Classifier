@@ -22,6 +22,7 @@ from .impl import report
 from .impl.globals import reset_Var, Var
 from .impl.kbase_obj import  AmpliconMatrix, AttributeMapping
 from .impl import app_file 
+from .impl.comm import *
 from .util.debug import dprint
 from .util.cli import run_check
 
@@ -259,7 +260,7 @@ class kb_RDP_Classifier:
         )
         source = 'kb_rdp_classifier/run_classify' # ver from provenance
 
-        ind = row_attr_map.get_attribute_slot_warn(attribute, source)
+        ind, overwrite = row_attr_map.get_add_attribute_slot(attribute, source)
         row_attr_map.update_attribute(ind, id2taxStr)
 
 
@@ -275,19 +276,13 @@ class kb_RDP_Classifier:
         amp_mat_upa_new = amp_mat.save(name=params.getd('output_name'))
 
         objects_created = [
-            dict(
+            dict( # row AttrMap
                 ref=row_attr_map_upa_new, 
-                description=(
-                    '%s attribute `%s`'
-                    % (
-                        ('Created' if create_row_attr_map else 'Updated'),
-                        attribute
-                    )
-                )
+                description=row_attr_map_desc(create_row_attr_map, overwrite, attribute),
             ),
-            dict(
+            dict( # AmpMat
                 ref=amp_mat_upa_new, 
-                description='Updated row AttributeMapping reference'
+                description='Updated amplicon AttributeMapping reference to %s' % row_attr_map_upa_new
             ),
         ]
 
@@ -343,6 +338,9 @@ class kb_RDP_Classifier:
             'workspace_name': params['workspace_name'],
             'html_window_height': report.REPORT_HEIGHT,
         }
+
+        # testing
+        Var.params_report = params_report
 
         report_obj = Var.kbr.create_extended_report(params_report)
 

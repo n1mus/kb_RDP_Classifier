@@ -14,25 +14,30 @@ from .globals import Var
 from .ds import TaxTree
 from . import app_file
 
-'''
+
 pd.set_option('display.max_rows', 100)
 pd.set_option('display.max_columns', 15)
 pd.set_option('display.width', 1000)
 pd.set_option('display.max_colwidth', 14)
-'''
+
 
 REPORT_HEIGHT= 800 # px, report window in app cell. don't make too high for smaller devices
-IMG_HEIGHT = REPORT_HEIGHT # px. don't make too big or title will shrink relatively
+IMG_HEIGHT = REPORT_HEIGHT # px
 MAX_DATA = 4000 # threshold for static hiding
-DO_STATIC = True # toggle the hiding behind static thing
+DO_STATIC = True #True # toggle the hiding behind static thing
 
-# TODO **** testing graph info
+# TODO * testing graph info
+# TODO tab with image scrolls vertically
 # TODO (nice-to-have) separate plotly js library into dir
 
+# TODO **** histogram 50by30 domain fcked
+# TODO pie (large) root
+# TODO pie 0s pile up onto title, but rotating makes labels overlap
+# TODO pie better hovertemplate
+# TODO pie labels/arrows don't line up  a lot of times
 # TODO * sunburst make sure phyla colors don't border
-# TODO sunburst needs better loading like pie/hist? loads with text messed up
-# TODO histogram user testing data messes it up - get test data
-# TODO pie labels run into title ...
+
+
 
 
 ####################################################################################################
@@ -45,9 +50,11 @@ def do_pie_hist(html_flpth):
 
     logging.info('Generating pie charts')
 
+    counts = {'root': 0, **{tax_lvl: 0 for tax_lvl in tax_lvls}}
+
+
     # iterate through df rows
     # count last tax lvl to make cutoff 
-    counts = {'root': 0, **{tax_lvl: 0 for tax_lvl in tax_lvls}}
     for index, row in df.iterrows():
         confs = {tax_lvl: row[conf_col] for tax_lvl, conf_col in zip(tax_lvls, conf_cols)}
         
@@ -61,6 +68,8 @@ def do_pie_hist(html_flpth):
         if tax_lvl_last == tax_lvls[-1]:
             counts[tax_lvl_last] += 1
         
+    dprint('counts',run='py')
+
     # sanity check
     acc = 0
     for _, count in counts.items():
@@ -68,7 +77,7 @@ def do_pie_hist(html_flpth):
     assert acc == len(df)
 
     # remove 0 counts to avoid label stacking into top margin
-    #counts = {tax_lvl: count for tax_lvl, count in counts.items() if count != 0}
+    counts = {tax_lvl: count for tax_lvl, count in counts.items() if count != 0}
 
     #
     trace0 = go.Pie(
@@ -82,10 +91,10 @@ def do_pie_hist(html_flpth):
             '<extra></extra>'
         ),
         sort=False,
-        rotation=90, # try to get 0s out of title. this num means 'genus' sector will end at 90 and 'family' will begin at 90
+        #rotation=90, # try to get 0s out of title. this num means 'genus' sector will end at 90 and 'family' will begin at 90
         showlegend=False,
         marker_colors=palette,
-        customdata=[tax_lvl.title() for tax_lvl in list(counts.keys())[::-1]],
+        customdata=[tax_lvl.title() for tax_lvl in tax_lvls[::-1]],
     )
     
     logging.info('Generating histogram') 
@@ -93,40 +102,21 @@ def do_pie_hist(html_flpth):
     hovertemplate = (
         'Rank: %s <br>'
         'Confidence bin: %%{customdata[0]} <br>' # TODO confidence before proportion
-        'Proportion of amplicons: %%{y:.3g} <br>'
+        'Proportion of amplicons: %%{y:.4g} <br>'
         'Amplicon count: %%{customdata[1]}/%d <br>'
         '<extra></extra>'
     )
-    bin_s_l = [
-        ('[%g, %g]' if i==9 else '[%g, %g)') % (i/10, i/10+.1) # plotly hist bin edges are [start,end)
-        for i in range(10)
-    ]
-
-    def hist(l):
-        '''Use np to hist but with [s,e) instead of (s,e] by nudging edges ever so slightly back
-        Max values nudged even more back so last bin catches them'''
-        d = 1e-15 # femto nudge bin edges back
-        h = np.histogram(l, range=[0-d,1-d], bins=10)[0]
-        return h
-
-    def clip_customdata(h, *ll):
-        '''If h begins with 0s, clip those for customdata'''
-        ll = [list(l).copy() for l in ll]
-        for v in h:
-            if v == 0:
-                for l in ll:
-                    l.pop(0)
-            else:
-                break
-        return list(zip(*ll))
+    bin_s_l = ['[%g, %g)' % (i/10, i/10+.1) for i in range(10)]
 
     trace1_l = []
     for i, (conf_col, tax_lvl) in enumerate(zip(conf_cols[::-1], tax_lvls[::-1])):
         conf_l = df[conf_col].tolist()
-        conf_l = [conf if conf<1 else conf-1e-6 for conf in conf_l] # milli nudge 1.0 confidences below
-        h = hist(conf_l)
-        #customdata = list(zip(bin_s_l, h)) 
-        #dprint('tax_lvl','conf_l','h','clip_customdata(h, bin_s_l, h)',max_lines=None,run='py')
+        conf_l = [conf if conf<1 else conf-1e-8 for conf in conf_l] # nudge 1.0 confidences below
+        h = np.histogram(conf_l, range=[0,1], bins=10)[0]
+        #if tax_lvl != 'domain':
+        #    continue
+        customdata = list(zip(bin_s_l, h)) 
+        #dprint('tax_lvl','conf_l','h','customdata',max_lines=None,run='py')
         trace1_l.append(
             go.Histogram(
                 x=conf_l, 
@@ -138,7 +128,7 @@ def do_pie_hist(html_flpth):
                 autobinx=False,
                 histnorm='probability', 
                 name=tax_lvl, 
-                customdata=clip_customdata(h, bin_s_l, h),
+                customdata=customdata,
                 hovertemplate=hovertemplate % (
                     tax_lvl.title(),
                     #tax_lvl,
@@ -188,15 +178,18 @@ def do_pie_hist(html_flpth):
 
     fig.update_layout(
         legend=dict(
-            y=0.5,
-            yanchor='top',
+            #x=-0.5,
+            #xanchor='left',
             itemclick='toggleothers',
             itemdoubleclick='toggle',
         ),
+        #showlegend=False, # causes WAY too much trouble because of HTML/etc. issues. wait for new plotly releases
         margin_t=40, # px, default 100
     )
 
     fig.write_html(html_flpth, full_html=False)
+
+    return False
 
 
 
@@ -204,13 +197,14 @@ def do_pie_hist(html_flpth):
 ####################################################################################################
 ####################################################################################################
 def do_sunburst(html_flpth,png_flpth):
+    # TODO don't show phylum on hover text/label (but keep using it for color)
 
     logging.info('Generating sunburst')
 
     TaxTree.build()
     names, parents, counts, paths, color_ids = TaxTree.get_sunburst_lists() # first el is Root
 
-    dprint('len(names) # num taxa')
+    dprint('len(names)')
 
     palette = px.colors.qualitative.Alphabet
     id2ind = {
@@ -360,3 +354,49 @@ class HTMLReportWriter:
 
 
 
+'''
+Fullscreen button
+https://www.w3schools.com/howto/howto_js_fullscreen.asp
+https://www.w3schools.com/howto/tryit.asp?filename=tryhow_js_fullscreen
+https://codepen.io/ssk7833/pen/mVOXXp
+
+
+Example tabs:
+-----------------------
+
+
+<div class="tab">
+<button class="tablinks" onclick="opentab(event, &#39;commands&#39;)">Cmd</button>
+<button class="tablinks" onclick="opentab(event, &#39;bootstrap_pie&#39;)">Bootstrap Confidence Pie</button>
+<button class="tablinks" onclick="opentab(event, &#39;bootstrap_hist&#39;)">Bootstrap Confidence Histogram</button>
+<button class="tablinks active" onclick="opentab(event, &#39;tax_sunburst&#39;)">Taxonomy</button>
+</div>
+
+
+<div id="command" class="tabcontent" style="display: none;">
+<p><code>Hello</code></p>
+<p><code>Hi</code></p>
+</div>
+
+<div id="pie" class="tabcontent" style="display: none;">
+<iframe height="100%" width="100%" src="./plotly_pie.html" style="border:none;"></iframe>
+</div>
+
+<div id="hist" class="tabcontent" style="display: none;">
+<iframe height="100%" width="100%" src="./plotly_hist.html" style="border:none;"></iframe>
+</div>
+
+<div id="sunburst" class="tabcontent" style="display: none;">
+<iframe height="100%" width="100%" src="./plotly_sunburst.html" style="border:none;"></iframe>
+</div>
+
+<div id="sunburst" class="tabcontent" style="display: none;">
+<div id="imgLink">
+<a href="./plotly_sunburst.html" target="_blank">
+<img alt="plotly_sunburst.png" src="./fig/plotly_sunburst.html" title="Open to interact">
+</a>
+</div>
+</div>
+
+
+'''
