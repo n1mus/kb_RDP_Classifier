@@ -11,7 +11,7 @@ WORK_DIR = /kb/module/work/tmp
 EXECUTABLE_SCRIPT_NAME = run_$(SERVICE_CAPS)_async_job.sh
 STARTUP_SCRIPT_NAME = start_server.sh
 TEST_SCRIPT_NAME = run_tests.sh
-TARGET_TESTS = ./ci_test.py
+TARGET_TESTS = ./unit_test.py
 
 .PHONY: test
 

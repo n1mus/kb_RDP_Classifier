@@ -160,6 +160,24 @@ class kb_RDP_ClassifierTest(unittest.TestCase):
             })
         self._check_objects()
 
+    ####################
+    ####################
+    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.DataFileUtil', new=lambda u: get_mock_dfu('userTest'))
+    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.GenericsAPI', new=lambda *a, **k: get_mock_gapi('userTest'))
+    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.run_check', new=get_mock_run_check('userTest', non_default_gene='silva_138_ssu'))
+    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.KBaseReport', new=lambda u: get_mock_kbr())
+    def test_userTest_data(self):
+        ret = self.serviceImpl.run_classify(
+            self.ctx, {
+                **self.params_ws,
+                'amp_mat_upa': userTest,
+                'rdp_clsf': {
+                    'gene': 'silva_138_ssu',
+                },
+            })
+        self._check_objects()
+
+
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -246,11 +264,11 @@ ci_tests = [ # integration tests
 appdev_tests = [ # integration tests
 ]
 
-run_tests = ['test_no_row_AttributeMapping'] 
+run_tests = ['test_userTest_data'] 
 #run_tests = ['test_custom'] 
 #run_tests = ['test_large'] 
 
 for test in all_tests:
         if test not in run_tests:
-            #delattr(kb_RDP_ClassifierTest, test)
+            delattr(kb_RDP_ClassifierTest, test)
             pass

@@ -381,7 +381,7 @@ class kb_RDP_ClassifierTest(unittest.TestCase):
             cmd_l = ['test,', 'test,', 'large'] * 10
         ).write()
 
-
+        
         ## Small Reports
         out_dir = os.path.join(testData_dir, 'by_dataset_input/enigma50by30/return/RDP_Classifier_output')
         Var.out_fixRank_flpth = os.path.join(out_dir, 'out_fixRank.tsv')
@@ -432,7 +432,7 @@ class kb_RDP_ClassifierTest(unittest.TestCase):
             html_links = report.HTMLReportWriter(
                 cmd_l = ['test,', 'test,', 'dummyTiny', 'i=%d' % i] + fixRank_lines
             ).write()
-           
+                   
 
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -452,7 +452,11 @@ class kb_RDP_ClassifierTest(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         dec = '!!!' * 200
-        print(dec,  "DO NOT FORGET TO GRAB HTML(S)", dec)
+        print(
+            dec, "DO NOT FORGET TO GRAB HTML(S)", 
+            dec, "DO NOT FORGET TO SPOT CHECK HTML(S) ON SAFARI/FIREFOX", 
+            dec
+        )
 
         skipped_tests = list(set(all_tests) - set(cls.list_tests()))
         print('* All tests (%d): %s' % (len(all_tests), all_tests))

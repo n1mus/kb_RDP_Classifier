@@ -32,6 +32,9 @@ enigma50by30_rowAttrMap = '55136/11/1'
 enigma17770by511 = '55136/26/1' # AmpliconMatrix
 enigma17770by511_rowAttrMap = '55136/19/1'
 
+
+userTest = '58225/2/1'
+
 ####################################################################################################
 ############################### appdev #############################################################
 ####################################################################################################
@@ -97,6 +100,7 @@ def get_mock_dfu(dataset):
             dummy10by8_AmpMat_wRowAttrMap: 'get_objects_AmpliconMatrix_wRowAttrMap.json',
             dummy10by8_AmpMat_noRowAttrMap: 'get_objects_AmpliconMatrix_noRowAttrMap.json',
             dummy10by8_AttrMap: 'get_objects_AttributeMapping.json',
+            userTest: 'AmpliconMatrix.json',
             }[upa]
         flpth = os.path.join(testData_dir, 'by_dataset_input', dataset, 'get_objects', flnm)
 
