@@ -79,20 +79,13 @@ description : |
     </p>
 
     <p>
-    Note about the filter-by-confidence output format:
-    As you may have noticed, everything that is cut off by the bootstrap confidence threshold
-    just gets the name of the last rank with a passable confidence, prepended with 'unclassified_'
-    </p>
-
-
-    <p>
     Note about randomness: the randomness of bootstrap confidence scores affects, across runs, 
     where along the ranks cutoffs by confidence may occur. 
     
     In cases of joint probability ties between highest scoring genera, 
     <i>assignment</i> of the genus is deterministic, with the first genus being chosen. 
     But in cases of <i>bootstrap</i> joint probability ties, ties are broken randomly,
-    so that the bootstrap confidence is the inverse of the number of tying genera. 
+    so that the bootstrap confidence approaches the inverse of the number of tying genera. 
     See RDP Classifier's Github page for more details
     </p>
 
@@ -107,7 +100,6 @@ description : |
 
     <p><a href="https://rdp.cme.msu.edu/classifier/class_help.jsp">RDP Classifier's help page</a></p>
     <p><a href="https://github.com/rdpstaff/classifier">RDP Classifier's Github</a></p>
-    <p><a href="https://sourceforge.net/projects/rdp-classifier/files/RDP_Classifier_TrainingData/">RDP Classifier 2.13 release notes, with dataset updates</a></p>
 
 
     <!--------------------------------------------------------------------------------------------->
@@ -116,11 +108,7 @@ description : |
     </h2>
 
     <p>
-    Thanks to the Banfield lab for their helpful comments and visualization inspiration.
-    Likewise, thanks to P. Weisenhorn for helpful comments and visualization suggestions.
-    And thanks to the KBase team in general,
-    to some or other of the unsung engineers who deserve mention, 
-    for their ideas, experience, and help.
+    Thanks to the members of the KBase team and the Banfield lab for their assistance.
     </p>
 
 
