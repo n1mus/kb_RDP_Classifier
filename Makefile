@@ -1,3 +1,6 @@
+UNIT_TESTS = util_test.py report_test.py kbase_obj_test.py params_test.py app_file_test.py
+INTEGRATION_TESTS = happy_test.py 
+TARGET_TESTS = $(INTEGRATION_TESTS)
 SERVICE = kb_rdp_classifier
 SERVICE_CAPS = kb_RDP_Classifier
 SPEC_FILE = kb_RDP_Classifier.spec
@@ -11,7 +14,6 @@ WORK_DIR = /kb/module/work/tmp
 EXECUTABLE_SCRIPT_NAME = run_$(SERVICE_CAPS)_async_job.sh
 STARTUP_SCRIPT_NAME = start_server.sh
 TEST_SCRIPT_NAME = run_tests.sh
-TARGET_TESTS = ./unit_test.py
 
 .PHONY: test
 

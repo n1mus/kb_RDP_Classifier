@@ -31,6 +31,7 @@ DO_STATIC = True # toggle the hiding behind static thing
 
 # TODO * sunburst make sure phyla colors don't border
 # TODO sunburst needs better loading like pie/hist? loads with text messed up
+# TODO sunburst img-link height grows a lot
 # TODO histogram user testing data messes it up - get test data
 # TODO pie labels run into title ...
 
@@ -153,8 +154,8 @@ def do_pie_hist(html_flpth):
         rows=2, 
         cols=1,
         subplot_titles=(
-            'Taxonomy Cutoff Rank (conf=%s)' % Var.params.prose_args['conf'],
-            'Bootstrap Confidence Histogram, By Rank',
+            'Taxonomy Cutoff Rank (conf=%s) <br>' % Var.params.get_prose_args()['conf'],
+            'Bootstrap Confidence <br>',
         ),
         specs=[
             [dict(type='pie')],
@@ -210,8 +211,6 @@ def do_sunburst(html_flpth,png_flpth):
     TaxTree.build()
     names, parents, counts, paths, color_ids = TaxTree.get_sunburst_lists() # first el is Root
 
-    dprint('len(names) # num taxa')
-
     palette = px.colors.qualitative.Alphabet
     id2ind = {
         color_id: i 
@@ -240,7 +239,7 @@ def do_sunburst(html_flpth,png_flpth):
     ))
 
     fig.update_layout(
-        title_text='Taxonomy (conf=%s)' % Var.params.prose_args['conf'],
+        title_text='Taxonomy (conf=%s)' % Var.params.get_prose_args()['conf'],
         title_x=0.5,
     )
 

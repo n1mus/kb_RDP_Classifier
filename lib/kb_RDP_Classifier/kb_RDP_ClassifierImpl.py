@@ -19,11 +19,11 @@ from installed_clients.GenericsAPIClient import GenericsAPI
 
 from .impl.params import Params
 from .impl import report
-from .impl.globals import reset_Var, Var
+from .impl.globals import Var
 from .impl.kbase_obj import  AmpliconMatrix, AttributeMapping
 from .impl import app_file 
-from .impl.comm import *
 from .util.debug import dprint
+from .util.misc import get_numbered_duplicate
 from .util.cli import run_check
 
 
@@ -64,8 +64,6 @@ class kb_RDP_Classifier:
         self.callback_url = os.environ['SDK_CALLBACK_URL']
         self.workspace_url = config['workspace-url']
         self.shared_folder = config['scratch']
-        
-
         #END_CONSTRUCTOR
         pass
 
@@ -81,26 +79,11 @@ class kb_RDP_Classifier:
         # return variables are: output
         #BEGIN run_classify
 
-        logging.info('Running `run_classify` with params:\n`%s`' % json.dumps(params, indent=3))
-
-
-        #
-        ##
-        ### params
-        ####
-        #####
+        logging.info(params)
 
         params = Params(params)
-
-        dprint('params', run=locals())
-
-
-        #
-        ##
-        ### globals, directories, refdata, etc TODO move directory stuff to config
-        ####
-        #####
-
+        Var.params = params
+        
         '''
         tmp/                                        `shared_folder`
         └── kb_rdp_clsf_<uuid>/                      `run_dir`
@@ -111,13 +94,8 @@ class kb_RDP_Classifier:
             |       ├── out_filterByConf.tsv
             |       └── out_fixedRank.tsv
             └── report/                             `report_dir`
-                ├── fig
-                |   ├── histogram.png
-                |   ├── pie.png
-                |   └── sunburst.png
-                ├── histogram_plotly.html
-                ├── pie_plotly.html
-                ├── suburst_plotly.html
+                ├── pie_hist.html
+                ├── suburst.html
                 └── report.html
         '''
 
@@ -125,9 +103,7 @@ class kb_RDP_Classifier:
         ## set up globals ds `Var` for this API-method run
         ## which involves making this API-method run's directory structure
 
-        reset_Var() # clear all fields but `debug` and config stuff
         Var.update({
-            'params': params,
             'run_dir': os.path.join(self.shared_folder, 'kb_rdp_clsf_' + str(uuid.uuid4())),
             'dfu': DataFileUtil(self.callback_url),
             'ws': Workspace(self.workspace_url),
@@ -151,6 +127,9 @@ class kb_RDP_Classifier:
         })
 
         os.mkdir(Var.out_dir)
+
+
+
 
         # cat and gunzip SILVA refdata
         # which has been split into ~95MB chunks to get onto Github
@@ -254,13 +233,19 @@ class kb_RDP_Classifier:
         ####
         #####
 
-        attribute = (
-            'RDP Classifier taxonomy, conf=%s, gene=%s, minWords=%s' 
-            % (params.prose_args['conf'], params.prose_args['gene'], params.prose_args['minWords'])
-        )
-        source = 'kb_rdp_classifier/run_classify' # ver from provenance
+        prose_args = params.get_prose_args(quote_str=True)
 
-        ind, overwrite = row_attr_map.get_add_attribute_slot(attribute, source)
+        attribute = (
+            'RDP Taxonomy (conf=%s, gene=%s, minWords=%s)' 
+            % (prose_args['conf'], prose_args['gene'], prose_args['minWords'])
+        )
+        attribute_names = row_attr_map.get_attribute_names()
+        if attribute in attribute_names:
+            attribute = get_numbered_duplicate(attribute_names, attribute)
+
+        source = 'RDP Classifier'
+
+        ind, attribute = row_attr_map.add_attribute_slot(attribute, source)
         row_attr_map.update_attribute(ind, id2taxStr)
 
 
@@ -270,28 +255,38 @@ class kb_RDP_Classifier:
         ####
         #####
 
-        row_attr_map_upa_new = row_attr_map.save()
+        amp_mat_output_name = Var.params['output_name']
+        attr_map_output_name = (
+            amp_mat_output_name + '.Amplicon_attributes' if create_row_attr_map else
+            None
+        )
+
+        row_attr_map_upa_new = row_attr_map.save(name=attr_map_output_name)
 
         amp_mat.obj['row_attributemapping_ref'] = row_attr_map_upa_new
-        amp_mat_upa_new = amp_mat.save(name=params.getd('output_name'))
+        amp_mat_upa_new = amp_mat.save(amp_mat_output_name)
 
         objects_created = [
             dict( # row AttrMap
                 ref=row_attr_map_upa_new, 
-                description=row_attr_map_desc(create_row_attr_map, overwrite, attribute),
+                description='%sAdded attribute `%s`' % (
+                    'Created. ' if create_row_attr_map else '',
+                    attribute,
+                )
             ),
             dict( # AmpMat
                 ref=amp_mat_upa_new, 
-                description='Updated amplicon AttributeMapping reference to %s' % row_attr_map_upa_new
+                description='Updated amplicon AttributeMapping reference to `%s`' % row_attr_map_upa_new
             ),
         ]
 
 
         # testing
-        Var.update(dict(
-            amp_mat=amp_mat,
-            row_attr_map=row_attr_map,
-        ))
+        if Var.debug:
+            Var.update(dict(
+                amp_mat=amp_mat,
+                row_attr_map=row_attr_map,
+            ))
 
 
 
@@ -335,7 +330,7 @@ class kb_RDP_Classifier:
             'html_links': html_links,
             'direct_html_link_index': 0,
             'file_links': file_links,
-            'workspace_name': params['workspace_name'],
+            'workspace_id': params['workspace_id'],
             'html_window_height': report.REPORT_HEIGHT,
         }
 

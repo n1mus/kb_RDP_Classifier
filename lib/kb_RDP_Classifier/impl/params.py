@@ -31,20 +31,27 @@ class Params:
     '''
 
     DEFAULTS = {
-       'output_name': None, # null case
        'conf': 0.8,                 
        'gene': 'silva_138_ssu',           
        'minWords': None, # null case
     }
 
+    # always required, whether front or back end call
     REQUIRED = [
-        'workspace_id',
-        'workspace_name',
         'amp_mat_upa',
+        'output_name',
+        'workspace_id', # for saving obj
     ]
 
-    PARAM_GROUPS = [
+    ALL = [
+        'amp_mat_upa',
+        'output_name',
         'rdp_clsf',
+        'conf',
+        'gene',
+        'minWords',
+        'workspace_id',
+        'workspace_name',
     ]
 
     CUSTOM = ['silva_138_ssu']
@@ -58,42 +65,45 @@ class Params:
         ## Flatten
         params = self.flatten(params)
         
-        ## Custom transformations to internal state ##
-
-        if 'output_name' in params and params['output_name'] == '':
-            params['output_name'] = None # treat empty string as null case
-                                         # since ui only returns strings for string type
-        
         self.params = params
 
 
     def _validate(self, params):
-        VALID = list(self.DEFAULTS.keys()) + self.REQUIRED + self.PARAM_GROUPS
+        for p in self.REQUIRED:
+            if p not in params:
+                raise Exception('Missing required `%s`' % p)
 
         for p in params:
-            if p not in VALID:
-                raise Exception()
+            if p not in self.ALL:
+                raise Exception('Unknown `%s`' % p)
 
         for p in self.flatten(params):
-            if p not in VALID:
-                raise Exception()
+            if p not in self.ALL:
+                raise Exception('Unknown `%s`' % p)
 
 
     def is_custom(self) -> bool:
         return self.getd('gene') in self.CUSTOM
 
 
-    @property
-    def prose_args(self) -> dict:
+    def get_prose_args(self, quote_str=False) -> dict:
         '''
         For printing all RDP Clsf params to user in a pretty way
         '''
 
-        return {
+        quote = lambda s: '"%s"' % s
+
+        d = {
             'conf': '%g' % self.getd('conf'),
             'gene': self.getd('gene'),
             'minWords': 'default' if self.getd('minWords') is None else str(self.getd('minWords')),
         }
+
+        if quote_str:
+            d['gene'] = quote(d['gene'])
+            if d['minWords'] == 'default': d['minWords'] = quote(d['minWords'])
+
+        return d
 
 
  

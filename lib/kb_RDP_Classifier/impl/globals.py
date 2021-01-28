@@ -13,10 +13,16 @@ config = dict(
     propfile=dict(
         silva_138_ssu='/kb/module/data/SILVA_138_SSU_NR_99/rRNAClassifier.properties',
     ),
-#--------------------------------------------------
+#-------------------------------------------------- template
 
     report_template_flpth = '/kb/module/lib/kb_RDP_Classifier/template/report.html',
 
+
+#-------------------------------------------------- 
+
+    gene_id_2_name = dict(
+        silva_138_ssu='SILVA 138 SSU',
+    ),
 
 
 )
@@ -46,6 +52,3 @@ tmp/                                        `shared_folder`
 
 Var = DotMap(config)
 
-def reset_Var():
-    Var.clear()
-    Var.update(config)

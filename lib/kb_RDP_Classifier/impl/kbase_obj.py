@@ -8,8 +8,8 @@ import re
 import json
 
 from ..util.debug import dprint
+from ..util.misc import get_numbered_duplicate
 from .globals import Var
-from .comm import * # exceptions and msgs
 
 
 pd.set_option('display.max_rows', 100)
@@ -26,7 +26,9 @@ pd.set_option('display.max_colwidth', 20)
 
 class AmpliconMatrix:
 
+
     OBJ_TYPE = "KBaseMatrices.AmpliconMatrix"
+
 
     def __init__(self, upa):
         self.upa = upa
@@ -50,25 +52,20 @@ class AmpliconMatrix:
         fasta_flpth = Var.gapi.fetch_sequence(self.upa)
         return fasta_flpth
 
+
     def add_row_mapping(self):
         self.obj['row_mapping'] = {
             id: id for id in self.obj['data']['row_ids']
         }
         
+
     def _swap_ids(self, id2attr: dict, axis='row') -> dict:
         '''
         `id2attr` will be AmpliconMatrix ids to attribute
         Swap those ids out for the AttributeMapping ids
         '''
-        if f'{axis}_mapping' not in self.obj:
-            msg = (
-                'Dude this object has a %s_attributemapping_ref '
-                'and needs a %s_mapping. Letting it slide for now.'
-                % (axis, axis)
-            )
-            logging.warning(msg)
-            Var.warnings.append(msg)
-            return id2attr
+        if f'{axis}_mapping' not in self.obj: # row_mapping conditionally required with row_attributemapping_ref
+            return id2attr                    # but if not present, then probably not needed anyway
 
         id2attr = {
             self.obj[f'{axis}_mapping'][id]: attr
@@ -76,6 +73,7 @@ class AmpliconMatrix:
         }
 
         return id2attr
+
 
     def save(self, name=None):
 
@@ -103,7 +101,9 @@ class AttributeMapping:
     For AmpliconMatrix's row AttributeMapping
     '''
 
+
     OBJ_TYPE = "KBaseExperiments.AttributeMapping"
+
 
     def __init__(self, upa, amp_mat: AmpliconMatrix):
         """
@@ -123,7 +123,6 @@ class AttributeMapping:
             self._get_obj()
         else:
             self._get_obj_new()
-
 
 
     def _get_obj(self):
@@ -148,38 +147,30 @@ class AttributeMapping:
             'ontology_mapping_method': 'User curated',
         }
 
-        suffix = '.Amplicon_attributes'
-        if Var.params.getd('output_name') is not None:
-            self.name = Var.params.getd('output_name') + suffix
-        else:
-            self.name = self.amp_mat.name + suffix
-        # TODO length checks
+
+    def get_attribute_names(self):
+        return [d['attribute'] for d in self.obj['attributes']]
 
 
-
-    def get_add_attribute_slot(self, attribute: str, source: str) -> tuple:
+    def add_attribute_slot(self, attribute, source) -> tuple:
         '''
-        Return (1) index, (2) overwrite
+        Return index and name
         '''
+        
+        # get new name if it's a duplicate
+        attributes = [d['attribute'] for d in self.obj['attributes']]
+        if attribute in attributes:
+            attribute = get_numbered_duplicate(attributes, attribute)
 
-        d = {'attribute': attribute, 'source': source}
-
-        ind = -1 # if `attributes` list is empty
-
-        # check if already exists 
-        for ind, attr_d in enumerate(self.obj['attributes']):
-            if attr_d == d:
-                return ind, True
-
-        # append slot to `attributes`
-        self.obj['attributes'].append(d)
-
-        # append slots to `instances` 
-        for attr_l in self.obj['instances'].values():
-            attr_l.append(None)
-
-        return ind + 1,  False
-
+        # append slots
+        self.obj['attributes'].append({
+            'attribute': attribute,
+            'source': source,
+        })
+        for instance in self.obj['instances'].values():
+            instance.append(None)
+        #
+        return len(self.obj['attributes']) - 1, attribute
 
 
     def update_attribute(self, ind, id2attr):

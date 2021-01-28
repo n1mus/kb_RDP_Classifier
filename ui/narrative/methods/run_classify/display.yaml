@@ -4,7 +4,7 @@
 name: Classify rRNA with taxonomy using na&iuml;ve Bayes with RDP Classifier - v2.13
 
 tooltip: |
-    Classify sequences in linear time with bootstrap confidence against reference taxonomy databases
+    Classify sequences with bootstrap confidence against reference SSU, LSU, and ITS taxonomy databases
 
 screenshots: []
 
@@ -31,11 +31,9 @@ parameters :
             Object of type <code>AmpliconMatrix</code>, which references amplicon sequences
     output_name:
         ui-name: |
-            New AmpliconMatrix name
+            Output AmpliconMatrix name
         short-hint: |
-            Default (leaving field blank) is same name, which would save over input object
-        long-hint: |
-            Default (leaving field blank) is same name, which would save over input object
+            Output AmpliconMatrix name
     conf:
         ui-name: |
             conf

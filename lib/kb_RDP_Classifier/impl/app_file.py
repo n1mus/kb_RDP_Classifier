@@ -96,3 +96,6 @@ def parse_shortSeq():
         ids = [id.strip() for id in fh.read().strip().splitlines() if len(id.strip()) > 0]
 
     return ids
+
+
+
