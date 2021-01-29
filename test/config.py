@@ -27,7 +27,12 @@ else:
 scratch = '/kb/module/work/tmp'
 testData_dir = '/kb/module/test/data'
 ######################################
-
+req = dict(
+    workspace_id='id',
+    amp_mat_upa='u/p/a',
+    output_name='out_name',
+)
+######################################
 
 class BaseTest(unittest.TestCase):
 

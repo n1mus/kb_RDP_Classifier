@@ -14,8 +14,7 @@
             "id": "rdp_clsf",
             "parameters": [
                 "conf",
-                "gene",
-                "minWords"
+                "gene"
             ],
             "optional": false,
             "advanced": true,
@@ -83,17 +82,6 @@
                         "display": "SILVA 138 - SSU (experimental)"
                     }
                 ]
-            }
-        },{
-            "id": "minWords",
-            "optional": true,
-            "advanced": true,
-            "allow_multiple": false,
-            "field_type": "text",
-            "default_values": [ null ],
-            "text_options": {
-                "validate_as": "int",
-                "min_int": 5
             }
         }
     ],

@@ -22,11 +22,9 @@ unzip rdp_classifier.zip && \
 rm rdp_classifier.zip
 
 RUN pip install pandas dotmap plotly
-
-RUN pip install plotly==4.14.1
-RUN pip install -U kaleido
-
 RUN pip install pipenv coverage pytest-cov python-coveralls flake8 
+RUN pip install plotly==4.14.3 kaleido
+
 
 # -----------------------------------------
 

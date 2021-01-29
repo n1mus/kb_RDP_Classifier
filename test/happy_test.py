@@ -207,9 +207,9 @@ ci_tests = [ # integration tests
 ]
 
 
-run_tests = ['test_userTest_data'] 
+#run_tests = ['test_default_params'] 
 #run_tests = ['test_custom'] 
-#run_tests = ['test_large'] 
+run_tests = ['test_large'] 
 
 for test in all_tests:
         if test not in run_tests:

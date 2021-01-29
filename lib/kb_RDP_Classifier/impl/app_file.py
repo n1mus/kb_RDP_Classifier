@@ -1,12 +1,16 @@
 '''
 For parsing or otherwise manipulating app input and output files
 '''
+import os
+import re
+
 import numpy as np
 import pandas as pd
-import os
 
+from ..util.debug import dprint
 from ..util.cli import run_check
 from .globals import Var
+
 
 def prep_refdata():
     '''
@@ -27,7 +31,7 @@ def prep_refdata():
         raise Exception(cmd)
 
 
-def parse_fixRank():
+def parse_fixRank(): # TODO use allRank
     
     # index is amplicon id
 
@@ -42,7 +46,7 @@ def parse_fixRank():
     return df, tax_lvls, conf_cols
 
 
-def parse_truncated_fixRank():
+def parse_truncated_fixRank(): # TODO use allRank
     '''
     Create df for plotly sunburst
     
@@ -62,17 +66,98 @@ def parse_truncated_fixRank():
     return df_tax
 
 
+
+def parse_allRank() -> dict:
+    class FixedRanksTracker:
+        FIXED_RANKS = np.array([
+            'domain',
+            'phylum',
+            'class',
+            'order',
+            'family',
+            'genus',
+        ])
+
+        def __init__(self):
+            self.at = -1
+
+        def _index(self, rank):
+            return np.where(self.FIXED_RANKS == rank)[0][0]
+
+        def is_contiguous(self, rank):
+            next = self._index(rank)
+            return abs(next - self.at) == 1
+
+        def update(self, rank):
+            self.at = self._index(rank)
+        
+        def difference(self, rank):
+            next = self._index(rank)
+            return next - self.at - 1
+
+    with open(Var.out_allRank_flpth) as fh: lines = fh.readlines()
+
+    tax_fix_l = []
+    tax_all_l = []
+    id_l = []
+
+    # enum all records
+    for l in lines:
+        toks = l.split('\t')
+
+        id = toks[0]
+        info = toks[2:]
+        n = int(len(info) / 3)
+        names = [info[i*3] for i in range(n)]
+        ranks = [info[i*3+1] for i in range(n)]
+        confs = [info[i*3+2] for i in range(n)]
+
+        tax_fix = ''
+        tax_all = ''
+
+        tracker = FixedRanksTracker()   
+
+        # enum ranks in record
+        for i, (name, rank, conf) in enumerate(zip(names, ranks, confs)):
+
+            #
+            if float(conf) < Var.params.getd('conf'):
+                break
+
+            # de-mangle
+            name = demangle(name)
+
+            # add rank to building string
+            tax_all = tax_all + f'{name};'
+            if rank in tracker.FIXED_RANKS:
+                if not tracker.is_contiguous(rank):
+                    tax_fix = tax_fix + ';' * tracker.difference(rank)
+                tax_fix = tax_fix + f'{name};'
+                tracker.update(rank)
+
+        id_l.append(id)
+        tax_fix_l.append(tax_fix)
+        tax_all_l.append(tax_all)
+        
+
+    id2tax = {id: tax for id, tax in zip(id_l, tax_fix_l)}
+    dprint('id2tax')
+    return id2tax
+
+
+def parse_shortSeq():
+
+    with open(Var.out_shortSeq_flpth) as fh:
+        ids = [id.strip() for id in fh.read().strip().splitlines() if len(id.strip()) > 0]
+
+    return ids
+
+
+def demangle(name):
+    return re.sub(r' \(taxid:\d+\)', '', name)
+
+
 '''
-
-    def parse_filterByConf(self):
-
-        # index is amplicon id
-        # rest of cols are domain-genus
-        df = pd.read_csv(self.filterByConf_flpth, sep='\t', index_col=0) 
-        return df
-'''
-
-
 def parse_filterByConf(pad_ranks=True) -> dict: # TODO why padding? to get 7 slots?
 
     NUM_RANKS = 7
@@ -88,14 +173,4 @@ def parse_filterByConf(pad_ranks=True) -> dict: # TODO why padding? to get 7 slo
     ).to_dict()
 
     return id2taxStr
-
-
-def parse_shortSeq():
-
-    with open(Var.out_shortSeq_flpth) as fh:
-        ids = [id.strip() for id in fh.read().strip().splitlines() if len(id.strip()) > 0]
-
-    return ids
-
-
-
+'''

@@ -91,7 +91,7 @@ class kb_RDP_Classifier:
             |   ├── cmd.txt
             |   ├── study_seqs.fna
             |   └── RDP_Classifier_output/          `out_dir`
-            |       ├── out_filterByConf.tsv
+            |       ├── out_allRank.tsv
             |       └── out_fixedRank.tsv
             └── report/                             `report_dir`
                 ├── pie_hist.html
@@ -158,7 +158,7 @@ class kb_RDP_Classifier:
 
         fasta_flpth = os.path.join(Var.return_dir, 'study_seqs.fna')
         cmd_flpth = os.path.join(Var.return_dir, 'cmd.txt')
-        out_filterByConf_flpth = os.path.join(Var.out_dir, 'out_filterByConf.tsv')
+        out_allRank_flpth = os.path.join(Var.out_dir, 'out_allRank.tsv')
         out_fixRank_flpth = os.path.join(Var.out_dir, 'out_fixRank.tsv')
         out_shortSeq_flpth = os.path.join(Var.out_dir, 'out_unclassifiedShortSeqs.txt') # seqs too short to classify
 
@@ -170,20 +170,20 @@ class kb_RDP_Classifier:
             + ' '.join(params.cli_args)
         )
         
-        cmd_fixRank_shortSeq = cmd + ' --format filterByConf --outputFile %s --shortseq_outfile %s' % (out_filterByConf_flpth, out_shortSeq_flpth)
-        cmd_filterByConf = cmd + ' --format fixRank --outputFile %s' % out_fixRank_flpth
+        cmd_fixRank_shortSeq = cmd + ' --format allRank --outputFile %s --shortseq_outfile %s' % (out_allRank_flpth, out_shortSeq_flpth)
+        cmd_allRank = cmd + ' --format fixRank --outputFile %s' % out_fixRank_flpth
 
 
         with open(cmd_flpth, 'w') as fh:
             fh.write(cmd_fixRank_shortSeq + '\n')
-            fh.write(cmd_filterByConf + '\n')
+            fh.write(cmd_allRank + '\n')
 
         run_check(cmd_fixRank_shortSeq)
-        run_check(cmd_filterByConf)
+        run_check(cmd_allRank)
 
 
         # give these to file parsing module
-        Var.out_filterByConf_flpth = out_filterByConf_flpth
+        Var.out_allRank_flpth = out_allRank_flpth
         Var.out_fixRank_flpth = out_fixRank_flpth
         Var.out_shortSeq_flpth = out_shortSeq_flpth
 
@@ -195,7 +195,7 @@ class kb_RDP_Classifier:
         ####
         #####
 
-        id2taxStr = app_file.parse_filterByConf() 
+        id2taxStr = app_file.parse_allRank() 
 
         # get ids of classified and unclassified seqs
         shortSeq_id_l = app_file.parse_shortSeq() # sequences too short to get clsf
@@ -233,11 +233,11 @@ class kb_RDP_Classifier:
         ####
         #####
 
-        prose_args = params.get_prose_args(quote_str=True)
+        prose_args = params.get_prose_args()
 
         attribute = (
-            'RDP Taxonomy (conf=%s, gene=%s, minWords=%s)' 
-            % (prose_args['conf'], prose_args['gene'], prose_args['minWords'])
+            'RDP Classifier Taxonomy (conf=%s, gene=%s)' 
+            % (prose_args['conf'], prose_args['gene'])
         )
         attribute_names = row_attr_map.get_attribute_names()
         if attribute in attribute_names:
@@ -298,7 +298,7 @@ class kb_RDP_Classifier:
         #####
 
         hrw = report.HTMLReportWriter(
-            cmd_l=[cmd_fixRank_shortSeq, cmd_filterByConf]
+            cmd_l=[cmd_fixRank_shortSeq, cmd_allRank]
         )
 
 

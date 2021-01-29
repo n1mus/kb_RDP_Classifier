@@ -68,9 +68,6 @@ def do_pie_hist(html_flpth):
         acc += count
     assert acc == len(df)
 
-    # remove 0 counts to avoid label stacking into top margin
-    #counts = {tax_lvl: count for tax_lvl, count in counts.items() if count != 0}
-
     #
     trace0 = go.Pie(
         labels=list(counts.keys())[::-1], # rev so color matches hist
@@ -154,8 +151,8 @@ def do_pie_hist(html_flpth):
         rows=2, 
         cols=1,
         subplot_titles=(
-            'Taxonomy Cutoff Rank (conf=%s) <br>' % Var.params.get_prose_args()['conf'],
-            'Bootstrap Confidence <br>',
+            'Taxonomy Cutoff Rank<br>(conf=%s)' % Var.params.get_prose_args()['conf'],
+            'Bootstrap Confidence',
         ),
         specs=[
             [dict(type='pie')],
