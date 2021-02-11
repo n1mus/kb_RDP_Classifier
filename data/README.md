@@ -4,5 +4,7 @@ For any reference data that is too large to host on Github (greater than 100MB),
 
 Except for now, it has been hacked with `split` and `cat`, i.e.,
 
-split -b 99M SILVA_138_SSU_NR_99.tgz SILVA_138_SSU_NR_99_
-cat SILVA_138_SSU_NR_99_* > SILVA_138_SSU_NR_99.tgz
+```
+split -b 99M -a 1 refdata.tgz split_refdata_
+cat split_refdata_* > refdata.tgz
+```

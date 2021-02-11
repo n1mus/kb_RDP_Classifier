@@ -1,2 +1,8 @@
 test_local
 sdk.cfg
+.git/
+__pycache__/
+*.py.bak*
+.*.sw[a-z]
+*tmp
+.idea/

@@ -31,15 +31,14 @@ def test_large():
     '''
     Globals used:
     report_dir, report_template_flpth
-    out_fixRank_flpth, out_filterByConf_flpth
+    out_allRank_flpth
     params
     '''
 
     Var.report_dir = os.path.join(run_dir, 'report_enigma17770by511')
     os.mkdir(Var.report_dir)
     out_dir = os.path.join(testData_dir, 'by_dataset_input/enigma17770by511/return/RDP_Classifier_output/')
-    Var.out_fixRank_flpth = os.path.join(out_dir, 'out_fixRank.tsv')
-    Var.out_filterByConf_flpth = os.path.join(out_dir, 'out_filterByConf.tsv')
+    Var.out_allRank_flpth = os.path.join(out_dir, 'out_allRank.tsv')
     Var.params = Params(dict(
         **req,
         conf=0.7777
@@ -50,13 +49,30 @@ def test_large():
     ).write()
 
 
+
 ####################################################################################################
 ####################################################################################################
 def test_small():
     
     out_dir = os.path.join(testData_dir, 'by_dataset_input/enigma50by30/return/RDP_Classifier_output')
-    Var.out_fixRank_flpth = os.path.join(out_dir, 'out_fixRank.tsv')
-    Var.out_filterByConf_flpth = os.path.join(out_dir, 'out_filterByConf.tsv')
+    Var.out_allRank_flpth = os.path.join(out_dir, 'out_allRank.tsv')
+    Var.report_dir = os.path.join(run_dir, 'report_enigma50by30')
+    os.mkdir(Var.report_dir)
+    Var.params = Params(dict(
+    **req,
+        conf=0.8
+    ))
+
+    html_links = report.HTMLReportWriter(
+        cmd_l = ['test,', 'test,', 'small']
+    ).write()   
+
+####################################################################################################
+####################################################################################################
+def test_small_linspace():
+    
+    out_dir = os.path.join(testData_dir, 'by_dataset_input/enigma50by30/return/RDP_Classifier_output')
+    Var.out_allRank_flpth = os.path.join(out_dir, 'out_allRank.tsv')
     for i, conf in enumerate(np.linspace(0, 1, 11)):
         Var.report_dir = os.path.join(run_dir, 'report_enigma50by30_conf%g' % conf)
         os.mkdir(Var.report_dir)
@@ -75,7 +91,6 @@ def test_small():
 def test_dummy():
     out_dir = os.path.join(testData_dir, 'by_dataset_input/dummy10by8/return/RDP_Classifier_output')
     Var.out_fixRank_flpth = os.path.join(out_dir, 'out_fixRank.tsv')
-    Var.out_filterByConf_flpth = os.path.join(out_dir, 'out_filterByConf.tsv')
     for i, conf in enumerate(np.linspace(0, 1, 11)):
         #if conf != 1: continue
         Var.report_dir = os.path.join(run_dir, 'report_dummy10by8_conf%g' % conf)
@@ -93,7 +108,6 @@ def test_dummy():
 ####################################################################################################
 def test_tiny():
     out_dir = os.path.join(testData_dir, 'by_dataset_input/dummyTiny/return/RDP_Classifier_output')
-    Var.out_filterByConf_flpth = os.path.join(out_dir, 'out_filterByConf.tsv')
     for i in range(5):
         Var.out_fixRank_flpth = os.path.join(out_dir, 'out_fixRank%d.tsv' % i)
         Var.report_dir = os.path.join(run_dir, 'report_dummyTiny_%d' % i)

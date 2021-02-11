@@ -1,6 +1,6 @@
 UNIT_TESTS = util_test.py report_test.py kbase_obj_test.py params_test.py app_file_test.py
-INTEGRATION_TESTS = happy_test.py 
-TARGET_TESTS = app_file_test.py
+INTEGRATION_TESTS = happy_test:test_small
+TARGET_TESTS = report_test:test_small #happy_test:kb_RDP_ClassifierTest.test_custom_large
 SERVICE = kb_rdp_classifier
 SERVICE_CAPS = kb_RDP_Classifier
 SPEC_FILE = kb_RDP_Classifier.spec

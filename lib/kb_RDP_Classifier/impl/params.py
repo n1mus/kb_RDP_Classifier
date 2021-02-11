@@ -33,7 +33,6 @@ class Params:
     DEFAULTS = {
        'conf': 0.8,                 
        'gene': 'silva_138_ssu',           
-       'minWords': None, # null case
     }
 
     # always required, whether front or back end call
@@ -49,12 +48,11 @@ class Params:
         'rdp_clsf',
         'conf',
         'gene',
-        'minWords',
         'workspace_id',
         'workspace_name',
     ]
 
-    CUSTOM = ['silva_138_ssu']
+    CUSTOM = ['silva_138_ssu', 'silva_138_ssu_v4']
 
 
     def __init__(self, params):
@@ -96,12 +94,10 @@ class Params:
         d = {
             'conf': '%g' % self.getd('conf'),
             'gene': self.getd('gene'),
-            'minWords': 'default' if self.getd('minWords') is None else str(self.getd('minWords')),
         }
 
         if quote_str:
             d['gene'] = quote(d['gene'])
-            if d['minWords'] == 'default': d['minWords'] = quote(d['minWords'])
 
         return d
 
@@ -118,13 +114,10 @@ class Params:
         if self.getd('conf') != self.DEFAULTS['conf']:
             cli_args += ['--conf', str(self.getd('conf'))]
 
-        if self.getd('gene') == self.DEFAULTS['gene']:
+        if self.getd('gene') in self.CUSTOM:
             cli_args += ['--train_propfile', Var.propfile[self.getd('gene')]]
         else:
             cli_args += ['--gene', self.getd('gene')]
-
-        if self.getd('minWords') != self.DEFAULTS['minWords']:
-            cli_args += ['--minWords', str(self.getd('minWords'))]
 
 
         return cli_args

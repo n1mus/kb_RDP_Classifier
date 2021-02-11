@@ -17,7 +17,7 @@
                 "gene"
             ],
             "optional": false,
-            "advanced": true,
+            "advanced": false,
             "allow_multiple": false,
             "with_border": true
         }
@@ -79,7 +79,10 @@
                         "display": "RDP Classifier 2.13 - fungalits_unite"
                     },{
                         "value": "silva_138_ssu",
-                        "display": "SILVA 138 - SSU (experimental)"
+                        "display": "SILVA 138 - SSU, Full Length (experimental)"
+                    },{
+                        "value": "silva_138_ssu_v4",
+                        "display": "SILVA 138 - SSU, V4 (experimental)"
                     }
                 ]
             }

@@ -7,15 +7,18 @@ from dotmap import DotMap
 config = dict(
     debug=True, # toggle for debugging prints/conditionals/etc.
 
-#------------------------------------------------- ref files
+#------------------------------------------------- rdp files
 
     classifier_jar_flpth='/opt/rdp_classifier_2.13/dist/classifier.jar',
     propfile=dict(
-        silva_138_ssu='/kb/module/data/SILVA_138_SSU_NR_99/rRNAClassifier.properties',
+        silva_138_ssu='/refdata/SILVA_138_SSU_parameters/rRNAClassifier.properties',
+        silva_138_ssu_v4='/refdata/SILVA_138_SSU_V4_parameters/rRNAClassifier.properties',
     ),
-#-------------------------------------------------- template
+
+#-------------------------------------------------- report
 
     report_template_flpth = '/kb/module/lib/kb_RDP_Classifier/template/report.html',
+    report_height=533,
 
 
 #-------------------------------------------------- 

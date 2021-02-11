@@ -56,22 +56,7 @@ parameter-groups:
 
 description : |
     <!--------------------------------------------------------------------------------------------->
-    <h2>
-    App Behavior
-    </h2>
-
-    <p>
-    Note about interpreting the fixed-rank output format: 
-    This should be taken with a grain of salt, knowing that taxonomy is not always fixed rank.
-    Yes, the fixed ranks refer to the ranks of domain, phylum, class, order, family, genus.
-    But sometimes taxonomy skips interim ranks or doesn't go all the way down to genus.
-    In fact, the RDP Classifier convention to deal with training against taxonomic databases
-    when some taxonomic annotations end prematurely is to create dummy genus nodes
-    with the name bearing its parent (whatever rank that is) prepended to '_genera_incertae_sedis'.
-    But how are missing interim nodes dealt with in the fixed-rank format?
-    In this case, RDP Classifier will gap-fill the missing ranks with the name and bootstrap confidence
-    of the next lowest available rank.
-    </p>
+    <h4> App Behavior </h4>
 
     <p>
     Note about randomness: the randomness of bootstrap confidence scores affects, across runs, 
@@ -81,7 +66,6 @@ description : |
     <i>assignment</i> of the genus is deterministic, with the first genus being chosen. 
     But in cases of <i>bootstrap</i> joint probability ties, ties are broken randomly,
     so that the bootstrap confidence approaches the inverse of the number of tying genera. 
-    See RDP Classifier's Github page for more details
     </p>
 
     <p>
@@ -89,25 +73,12 @@ description : |
 
 
     <!--------------------------------------------------------------------------------------------->
-    <h2>
-    Resources
-    </h2>
+    <h4> Resources </h4>
 
     <p><a href="https://rdp.cme.msu.edu/classifier/class_help.jsp">RDP Classifier's help page</a></p>
-    <p><a href="https://github.com/rdpstaff/classifier">RDP Classifier's Github</a></p>
 
 
-    <!--------------------------------------------------------------------------------------------->
-    <h2>
-    Acknowledgements
-    </h2>
-
-    <p>
-    Thanks to the members of the KBase team and the Banfield lab for their assistance.
-    </p>
-
-
-    <br><br>
+    <br>
 
     
 publications:
@@ -118,4 +89,4 @@ publications:
 
     -
         display-text: |
-            Plotly Technologies Inc. Collaborative data science. Montréal, QC, 2015. https://plot.ly.
+            Bokulich, N.A., Robeson, M., Dillon, M.R. bokulich-lab/RESCRIPt. Zenodo. http://doi.org/10.5281/zenodo.3891931

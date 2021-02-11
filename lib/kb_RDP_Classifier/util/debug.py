@@ -4,7 +4,7 @@ import subprocess
 import sys
 import os
 import inspect
-import time as _time
+import time as time_
 import functools
 
 debug = True # toggle to turn off debug printing
@@ -37,11 +37,11 @@ def dprint(*args, run='py', json=True, where=False, time=False, max_lines=MAX_LI
 
     if where:
         stack = inspect.stack()
-        print("(file `%s`)\n(func `%s`)\n(line `%d`)" % (stack[1][1], stack[1][3], stack[1][2]))
+        print("(%s, line %d, %s)" % (stack[1][1], stack[1][2], stack[1][3]))
     
     for arg in args:
         if time:
-            t0 = _time.time()
+            t0 = time_.time()
         if run:
             print('>> ' + arg)
             if run in ['cli', 'shell', 'bash']:
@@ -58,7 +58,7 @@ def dprint(*args, run='py', json=True, where=False, time=False, max_lines=MAX_LI
         else:
             print_format(arg)
         if time:
-            t = _time.time() - t0
+            t = time_.time() - t0
             print('[%fs]' % t)
     
     print('-' * TAG_WIDTH)
@@ -77,3 +77,19 @@ def where_am_i(f):
         dprint("where am i? in module `%s` method `%s`" % (globals()['__name__'], f.__qualname__))
         f(*args, **kwargs)
     return f_new
+
+
+class TimePartition:
+    def __init__(self):
+        self.start = time_.time()
+    def emit(self, duration_label):
+        t = time_.time() - self.start
+        dprint(
+            '%s: %d min %d s' % (
+                duration_label,
+                round(t / 60),
+                round(t % 60)
+            ),
+            run=None
+        )
+        self.start = time_.time()

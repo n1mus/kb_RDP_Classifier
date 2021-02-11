@@ -11,7 +11,7 @@ import uuid
 
 from ..util.debug import dprint
 from .globals import Var
-from .ds import TaxTree
+from . import ana
 from . import app_file
 
 '''
@@ -21,8 +21,7 @@ pd.set_option('display.width', 1000)
 pd.set_option('display.max_colwidth', 14)
 '''
 
-REPORT_HEIGHT= 800 # px, report window in app cell. don't make too high for smaller devices
-IMG_HEIGHT = REPORT_HEIGHT # px. don't make too big or title will shrink relatively
+IMG_HEIGHT = Var.report_height # px. don't make too big or title will shrink relatively
 MAX_DATA = 4000 # threshold for static hiding
 DO_STATIC = True # toggle the hiding behind static thing
 
@@ -42,31 +41,10 @@ DO_STATIC = True # toggle the hiding behind static thing
 def do_pie_hist(html_flpth):
 
     palette = px.colors.qualitative.D3
-    df, tax_lvls, conf_cols = app_file.parse_fixRank()
 
     logging.info('Generating pie charts')
-
-    # iterate through df rows
-    # count last tax lvl to make cutoff 
-    counts = {'root': 0, **{tax_lvl: 0 for tax_lvl in tax_lvls}}
-    for index, row in df.iterrows():
-        confs = {tax_lvl: row[conf_col] for tax_lvl, conf_col in zip(tax_lvls, conf_cols)}
-        
-        tax_lvl_last = 'root'
-        for tax_lvl in tax_lvls:
-            if confs[tax_lvl] < Var.params.getd('conf'):
-                counts[tax_lvl_last] += 1
-                break
-            else:
-                tax_lvl_last = tax_lvl
-        if tax_lvl_last == tax_lvls[-1]:
-            counts[tax_lvl_last] += 1
-        
-    # sanity check
-    acc = 0
-    for _, count in counts.items():
-        acc += count
-    assert acc == len(df)
+    counts = ana.get_cutoff_rank_counts()
+    total = sum([c for c in counts.values()])
 
     #
     trace0 = go.Pie(
@@ -76,7 +54,7 @@ def do_pie_hist(html_flpth):
         hovertemplate=(
             'Rank: %{customdata[0]} <br>'
             'Percentage of amplicons: %{percent} <br>'
-            'Amplicon count: %{value}/' + str(df.shape[0]) +
+            'Amplicon count: %{value}/' + str(total) +
             '<extra></extra>'
         ),
         sort=False,
@@ -87,6 +65,7 @@ def do_pie_hist(html_flpth):
     )
     
     logging.info('Generating histogram') 
+    rank2confs = ana.get_rank2confs()
 
     hovertemplate = (
         'Rank: %s <br>'
@@ -100,13 +79,6 @@ def do_pie_hist(html_flpth):
         for i in range(10)
     ]
 
-    def hist(l):
-        '''Use np to hist but with [s,e) instead of (s,e] by nudging edges ever so slightly back
-        Max values nudged even more back so last bin catches them'''
-        d = 1e-15 # femto nudge bin edges back
-        h = np.histogram(l, range=[0-d,1-d], bins=10)[0]
-        return h
-
     def clip_customdata(h, *ll):
         '''If h begins with 0s, clip those for customdata'''
         ll = [list(l).copy() for l in ll]
@@ -119,12 +91,8 @@ def do_pie_hist(html_flpth):
         return list(zip(*ll))
 
     trace1_l = []
-    for i, (conf_col, tax_lvl) in enumerate(zip(conf_cols[::-1], tax_lvls[::-1])):
-        conf_l = df[conf_col].tolist()
-        conf_l = [conf if conf<1 else conf-1e-6 for conf in conf_l] # milli nudge 1.0 confidences below
-        h = hist(conf_l)
-        #customdata = list(zip(bin_s_l, h)) 
-        #dprint('tax_lvl','conf_l','h','clip_customdata(h, bin_s_l, h)',max_lines=None,run='py')
+    for i, (rank, conf_l) in enumerate(rank2confs.items()):
+        h = ana.hist_0_1_10(conf_l)
         trace1_l.append(
             go.Histogram(
                 x=conf_l, 
@@ -135,11 +103,10 @@ def do_pie_hist(html_flpth):
                 ),
                 autobinx=False,
                 histnorm='probability', 
-                name=tax_lvl, 
+                name=rank, 
                 customdata=clip_customdata(h, bin_s_l, h),
                 hovertemplate=hovertemplate % (
-                    tax_lvl.title(),
-                    #tax_lvl,
+                    rank.title(),
                     len(conf_l),
                 ),
                 marker_color=palette[i],
@@ -162,7 +129,7 @@ def do_pie_hist(html_flpth):
     )
 
     fig.add_trace(trace0, row=1, col=1)
-    for trace1 in trace1_l:
+    for trace1 in trace1_l[::-1]:
         fig.add_trace(trace1, row=2, col=1)
 
     fig.update_xaxes(
@@ -194,7 +161,10 @@ def do_pie_hist(html_flpth):
         margin_t=40, # px, default 100
     )
 
-    fig.write_html(html_flpth, full_html=False)
+    fig.write_html(
+        html_flpth, 
+        full_html=False
+    )
 
 
 
@@ -205,8 +175,8 @@ def do_sunburst(html_flpth,png_flpth):
 
     logging.info('Generating sunburst')
 
-    TaxTree.build()
-    names, parents, counts, paths, color_ids = TaxTree.get_sunburst_lists() # first el is Root
+    ana.TaxTree.build()
+    names, parents, counts, paths, color_ids = ana.TaxTree.get_sunburst_lists() # first el is Root
 
     palette = px.colors.qualitative.Alphabet
     id2ind = {
@@ -228,11 +198,12 @@ def do_sunburst(html_flpth,png_flpth):
         ),
         hovertemplate=(
             'Taxon: %{label}<br>'
-            'Path: %{id}<br>' # should be rootless TODO
+            'Path: %{id}<br>'
             'Amplicon count: %{value}'
             '<extra></extra>' # hide secondary hover box
         ),
         branchvalues='total',
+        sort=False,
     ))
 
     fig.update_layout(

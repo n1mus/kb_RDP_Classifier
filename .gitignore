@@ -3,5 +3,9 @@ sdk.cfg
 .*.sw[a-z]
 *.py.bak*
 *tmp
+.idea/
 test/data/
 __pycache__/
+data/refdata.tgz
+data/SILVA_138_SSU_parameters/
+data/SILVA_138_SSU_V4_parameters/

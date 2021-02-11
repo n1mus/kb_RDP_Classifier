@@ -132,9 +132,9 @@ class kb_RDP_Classifier:
 
 
         # cat and gunzip SILVA refdata
-        # which has been split into ~95MB chunks to get onto Github
-        if params.is_custom():
-            app_file.prep_refdata()
+        # which has been split into ~99MB chunks to get onto Github
+        #if params.is_custom():
+        #    app_file.prep_refdata()
 
 
         #
@@ -157,35 +157,19 @@ class kb_RDP_Classifier:
         #####
 
         fasta_flpth = os.path.join(Var.return_dir, 'study_seqs.fna')
-        cmd_flpth = os.path.join(Var.return_dir, 'cmd.txt')
-        out_allRank_flpth = os.path.join(Var.out_dir, 'out_allRank.tsv')
-        out_fixRank_flpth = os.path.join(Var.out_dir, 'out_fixRank.tsv')
-        out_shortSeq_flpth = os.path.join(Var.out_dir, 'out_unclassifiedShortSeqs.txt') # seqs too short to classify
+        Var.out_allRank_flpth = os.path.join(Var.out_dir, 'out_allRank.tsv')
+        Var.out_shortSeq_flpth = os.path.join(Var.out_dir, 'out_unclassifiedShortSeqs.txt') # seqs too short to classify
 
         shutil.copyfile(amp_mat.get_fasta(), fasta_flpth)
 
         cmd = (  
-            'java -Xmx2g -jar %s classify %s ' # custom trained propfiles need bit more memory
-            % (Var.classifier_jar_flpth, fasta_flpth) 
-            + ' '.join(params.cli_args)
+            'java -Xmx4g -jar %s classify %s ' % (Var.classifier_jar_flpth, fasta_flpth) 
+            + ' '.join(params.cli_args) + ' '
+            + '--format allRank '
+            + '--outputFile %s --shortseq_outfile %s' % (Var.out_allRank_flpth, Var.out_shortSeq_flpth)
         )
-        
-        cmd_fixRank_shortSeq = cmd + ' --format allRank --outputFile %s --shortseq_outfile %s' % (out_allRank_flpth, out_shortSeq_flpth)
-        cmd_allRank = cmd + ' --format fixRank --outputFile %s' % out_fixRank_flpth
 
-
-        with open(cmd_flpth, 'w') as fh:
-            fh.write(cmd_fixRank_shortSeq + '\n')
-            fh.write(cmd_allRank + '\n')
-
-        run_check(cmd_fixRank_shortSeq)
-        run_check(cmd_allRank)
-
-
-        # give these to file parsing module
-        Var.out_allRank_flpth = out_allRank_flpth
-        Var.out_fixRank_flpth = out_fixRank_flpth
-        Var.out_shortSeq_flpth = out_shortSeq_flpth
+        run_check(cmd)
 
 
 
@@ -195,7 +179,7 @@ class kb_RDP_Classifier:
         ####
         #####
 
-        id2taxStr = app_file.parse_allRank() 
+        id2taxStr = app_file.get_fix_filtered_id2tax() 
 
         # get ids of classified and unclassified seqs
         shortSeq_id_l = app_file.parse_shortSeq() # sequences too short to get clsf
@@ -298,7 +282,7 @@ class kb_RDP_Classifier:
         #####
 
         hrw = report.HTMLReportWriter(
-            cmd_l=[cmd_fixRank_shortSeq, cmd_allRank]
+            cmd_l=[cmd]
         )
 
 
@@ -331,7 +315,7 @@ class kb_RDP_Classifier:
             'direct_html_link_index': 0,
             'file_links': file_links,
             'workspace_id': params['workspace_id'],
-            'html_window_height': report.REPORT_HEIGHT,
+            'html_window_height': Var.report_height, 
         }
 
         # testing

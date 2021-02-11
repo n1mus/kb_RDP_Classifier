@@ -26,14 +26,14 @@ def _add_dicts(*d_l):
 
 ####################################################################################################
 def test_parse_allRank():
-    Var.out_allRank_flpth = os.path.join(testData_dir, 'by_dataset_input/enigma17770by511/return/RDP_Classifier_output/out_allRank.tsv')
+    Var.out_allRank_flpth = os.path.join(testData_dir, 'example_allRank.tsv')
     Var.params = Params({
         **req,
         'conf': 0.8
     })
     id2tax = app_file.parse_allRank()
 
-    # TODO these will all change whenever the classifier changes, so make these from dummy out_allRank.tsv
+    # TODO these will all change whenever the classifier changes, so move the file tested against into dummy designation
 
     id2tax_first = {
 '000b0b88ceb19d19678f6c3a39f2db73': 'Bacteria;Proteobacteria;Alphaproteobacteria;Rhizobiales;Xanthobacteraceae;uncultured;',

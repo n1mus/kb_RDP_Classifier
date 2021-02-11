@@ -25,14 +25,20 @@ RUN pip install pandas dotmap plotly
 RUN pip install pipenv coverage pytest-cov python-coveralls flake8 
 RUN pip install plotly==4.14.3 kaleido
 
+RUN pip install gdown
+RUN mkdir /refdata && \
+cd /refdata && \
+gdown https://drive.google.com/uc?id=15tdT7_hJV8lOCpLX1-IfKw7w1IwKn21Z 
+RUN cd /refdata && tar xzf /refdata/refdata.tgz    
+
 
 # -----------------------------------------
-
 COPY ./ /kb/module
 RUN mkdir -p /kb/module/work
 RUN chmod -R a+rw /kb/module
 
 WORKDIR /kb/module
+
 
 RUN make all
 
