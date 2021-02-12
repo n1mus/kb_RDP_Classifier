@@ -2,6 +2,7 @@ import os
 from unittest.mock import patch
 import json
 import uuid
+
 import numpy as np
 from pytest import raises
 
@@ -14,6 +15,7 @@ from data import *
 from config import req
 
 
+
 def _add_dicts(*d_l):
     retd = {}
     for d in d_l:
@@ -24,16 +26,16 @@ def _add_dicts(*d_l):
 
 
 
-####################################################################################################
-def test_parse_allRank():
-    Var.out_allRank_flpth = os.path.join(testData_dir, 'example_allRank.tsv')
+def test_get_fix_filtered_id2tax():
+    '''
+    Test: demangling, skipped ranks, filtered ranks
+    '''
+    Var.out_allRank_flpth = os.path.join(testData_dir, 'example_allRank.tsv') # old one without 'Genera Incertae Sedis'
     Var.params = Params({
         **req,
         'conf': 0.8
     })
-    id2tax = app_file.parse_allRank()
-
-    # TODO these will all change whenever the classifier changes, so move the file tested against into dummy designation
+    id2tax = app_file.get_fix_filtered_id2tax()
 
     id2tax_first = {
 '000b0b88ceb19d19678f6c3a39f2db73': 'Bacteria;Proteobacteria;Alphaproteobacteria;Rhizobiales;Xanthobacteraceae;uncultured;',
@@ -83,11 +85,7 @@ def test_parse_allRank():
         assert id2tax[id] == id2tax_expected[id], '%s:\n%s\n%s' % (id, id2tax[id], id2tax_expected[id])
 
 
-'''
-Test: demangling, skipped ranks, filtered ranks
-'''
 
-####################################################################################################
 def test_parse_shortSeq():
     pass
 

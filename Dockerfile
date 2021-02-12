@@ -31,7 +31,6 @@ cd /refdata && \
 gdown https://drive.google.com/uc?id=15tdT7_hJV8lOCpLX1-IfKw7w1IwKn21Z 
 RUN cd /refdata && tar xzf /refdata/refdata.tgz    
 
-
 # -----------------------------------------
 COPY ./ /kb/module
 RUN mkdir -p /kb/module/work

@@ -5,13 +5,15 @@ from unittest.mock import patch
 from configparser import ConfigParser
 import json
 import uuid
+
+import pytest
 import numpy as np
 
-from kb_RDP_Classifier.kb_RDP_ClassifierImpl import kb_RDP_Classifier
-from kb_RDP_Classifier.kb_RDP_ClassifierServer import MethodContext
-from kb_RDP_Classifier.authclient import KBaseAuth as _KBaseAuth
-
 from installed_clients.WorkspaceClient import Workspace
+from kb_RDP_Classifier.authclient import KBaseAuth as _KBaseAuth
+from kb_RDP_Classifier.kb_RDP_ClassifierServer import MethodContext
+from kb_RDP_Classifier.kb_RDP_ClassifierImpl import kb_RDP_Classifier
+
 
 
 ###################################### 

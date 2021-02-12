@@ -6,6 +6,7 @@ from unittest.mock import patch
 from configparser import ConfigParser
 import json
 import uuid
+
 import numpy as np
 
 from kb_RDP_Classifier.kb_RDP_ClassifierImpl import kb_RDP_Classifier
@@ -19,11 +20,6 @@ import config as cfg
 
 
 class kb_RDP_ClassifierTest(cfg.BaseTest):
-    '''
-    Tests to run will be filtered by code block following class definition
-    '''
-
-
 
     ####################
     ####################
@@ -60,7 +56,7 @@ class kb_RDP_ClassifierTest(cfg.BaseTest):
     ####################
     @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.DataFileUtil', new=lambda *a: get_mock_dfu('enigma50by30'))
     @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.GenericsAPI', new=lambda *a, **k: get_mock_gapi('enigma50by30'))
-    #@patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.run_check', new=get_mock_run_check('enigma50by30'))
+    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.run_check', new=get_mock_run_check('enigma50by30', non_default_gene='fungallsu'))
     @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.KBaseReport', new=lambda *a: get_mock_kbr())
     def test_non_default_params(self):
         ret = self.serviceImpl.run_classify(
@@ -71,7 +67,6 @@ class kb_RDP_ClassifierTest(cfg.BaseTest):
                 'rdp_clsf': {
                     'conf': 0.222222222,
                     'gene': 'fungallsu',
-                    'minWords': 5,
                 },
             })
 

@@ -45,10 +45,9 @@ class AmpliconMatrix:
 
         # debug annotate run_dir with name
         if 'run_dir' in Var:
-            dprint('touch %s' % os.path.join(Var.run_dir, '#' + self.name), run='cli') 
+            dprint('touch %s' % os.path.join(Var.run_dir, '_' + self.name), run='cli') 
 
     def get_fasta(self):
-        dprint('self.upa', run=locals())
         fasta_flpth = Var.gapi.fetch_sequence(self.upa)
         return fasta_flpth
 

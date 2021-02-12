@@ -1,0 +1,6 @@
+[run]
+omit =
+    */__init__.py
+    */kb_RDP_ClassifierServer.py
+    */baseclient.py
+    */authclient.py

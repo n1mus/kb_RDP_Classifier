@@ -1,6 +1,6 @@
 UNIT_TESTS = util_test.py report_test.py kbase_obj_test.py params_test.py app_file_test.py
-INTEGRATION_TESTS = happy_test:test_small
-TARGET_TESTS = report_test:test_small #happy_test:kb_RDP_ClassifierTest.test_custom_large
+INTEGRATION_TESTS = happy_test.py::kb_RDP_ClassifierTest::test_custom_small
+TARGET_TESTS = .#happy_test.py::kb_RDP_ClassifierTest::test_too_short_seq happy_test.py::kb_RDP_ClassifierTest::test_userTest_data
 SERVICE = kb_rdp_classifier
 SERVICE_CAPS = kb_RDP_Classifier
 SPEC_FILE = kb_RDP_Classifier.spec
@@ -50,6 +50,7 @@ build-startup-script:
 build-test-script:
 	echo '#!/bin/bash' > $(TEST_DIR)/$(TEST_SCRIPT_NAME)
 	echo 'script_dir=$$(dirname "$$(readlink -f "$$0")")' >> $(TEST_DIR)/$(TEST_SCRIPT_NAME)
+	echo 'lib=$$script_dir/../$(LIB_DIR)/$(SERVICE_CAPS)' >> $(TEST_DIR)/$(TEST_SCRIPT_NAME)
 	echo 'export KB_DEPLOYMENT_CONFIG=$$script_dir/../deploy.cfg' >> $(TEST_DIR)/$(TEST_SCRIPT_NAME)
 	echo 'export KB_AUTH_TOKEN=`cat /kb/module/work/token`' >> $(TEST_DIR)/$(TEST_SCRIPT_NAME)
 	echo 'echo "Removing temp files..."' >> $(TEST_DIR)/$(TEST_SCRIPT_NAME)
@@ -57,7 +58,11 @@ build-test-script:
 	echo 'echo "...done removing temp files."' >> $(TEST_DIR)/$(TEST_SCRIPT_NAME)
 	echo 'export PYTHONPATH=$$script_dir/../$(LIB_DIR):$$PATH:$$PYTHONPATH' >> $(TEST_DIR)/$(TEST_SCRIPT_NAME)
 	echo 'cd $$script_dir/../$(TEST_DIR)' >> $(TEST_DIR)/$(TEST_SCRIPT_NAME)
-	echo 'python -m nose --with-coverage --cover-package=$(SERVICE_CAPS) --cover-html --cover-html-dir=/kb/module/work/test_coverage --nocapture  --nologcapture $(TARGET_TESTS)' >> $(TEST_DIR)/$(TEST_SCRIPT_NAME)
+	#echo 'python -m nose --with-coverage --cover-package=$(SERVICE_CAPS) --cover-html --cover-html-dir=/kb/module/work/test_coverage --nocapture  --nologcapture $(TARGET_TESTS)' >> $(TEST_DIR)/$(TEST_SCRIPT_NAME)
+	echo 'pytest  --verbose -s --cov=$$lib --cov-config=coveragerc_sdk --cov-report=html $(TARGET_TESTS)' >> $(TEST_DIR)/$(TEST_SCRIPT_NAME)
+	echo 'mv .coverage /kb/module/work/' >> $(TEST_DIR)/$(TEST_SCRIPT_NAME)
+	echo 'rm -r /kb/module/work/test_coverage' >> $(TEST_DIR)/$(TEST_SCRIPT_NAME)
+	echo 'mv htmlcov /kb/module/work/test_coverage' >> $(TEST_DIR)/$(TEST_SCRIPT_NAME)	
 	chmod +x $(TEST_DIR)/$(TEST_SCRIPT_NAME)
 
 test:

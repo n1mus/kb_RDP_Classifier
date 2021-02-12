@@ -3,6 +3,7 @@ import unittest
 from unittest.mock import patch
 import json
 import uuid
+
 import numpy as np
 from pytest import raises
 
@@ -75,7 +76,6 @@ def test_default():
         'rdp_clsf': {
             'conf': 0.8,
             'gene': 'silva_138_ssu',
-            'minWords': None,
         },
     })
 
@@ -83,18 +83,16 @@ def test_default():
     assert params['output_name'] is 'out_name'
     assert params.getd('conf') == 0.8
     assert params.getd('gene') == 'silva_138_ssu'
-    assert params.getd('minWords') is None
     assert(
         params.get_prose_args() == {
             'conf': '0.8',
             'gene': 'silva_138_ssu',
-            'minWords': 'default'
         }
     ), json.dumps(params.get_prose_args(), indent=4)
     assert(
         params.cli_args == [
             '--train_propfile', 
-            '/kb/module/data/SILVA_138_SSU_NR_99/rRNAClassifier.properties'
+            Var.propfile['silva_138_ssu'],
         ]
     ), params.cli_args
     
@@ -108,7 +106,6 @@ def test_non_default():
         'rdp_clsf': {
             'conf': 0.99999,
             'gene': 'fungallsu',
-            'minWords': 100,
         },
     })
 
@@ -116,17 +113,15 @@ def test_non_default():
     assert params['output_name'] == 'out_name'
     assert params.getd('conf') == 0.99999
     assert params.getd('gene') == 'fungallsu'
-    assert params.getd('minWords') == 100
     assert(
         params.get_prose_args() == {
             'conf': '0.99999',
             'gene': 'fungallsu',
-            'minWords': '100'
         }
     ), json.dumps(params.get_prose_args(), indent=4)
     assert(
         params.cli_args == [
-            '--conf', '0.99999', '--gene', 'fungallsu', '--minWords', '100'
+            '--conf', '0.99999', '--gene', 'fungallsu',
         ] 
     ), params.cli_args
     str(params) # should not throw
@@ -143,18 +138,16 @@ def test_no_user_supplied_values():
     assert params['output_name'] == 'out_name'
     assert params.getd('conf') == 0.8
     assert params.getd('gene') == 'silva_138_ssu'
-    assert params.getd('minWords') is None
     assert(
         params.get_prose_args() == {
             'conf': '0.8',
             'gene': 'silva_138_ssu',
-            'minWords': 'default'
         }
     ), json.dumps(params.get_prose_args(), indent=4)
     assert(
         params.cli_args == [
             '--train_propfile', 
-            '/kb/module/data/SILVA_138_SSU_NR_99/rRNAClassifier.properties'
+            Var.propfile['silva_138_ssu'],
         ]
     ), params.cli_args
     

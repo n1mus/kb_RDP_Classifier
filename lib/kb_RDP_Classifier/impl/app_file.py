@@ -21,7 +21,7 @@ def _demangle(name):
     return re.sub(r' \(taxid:\d+\)', '', name)
 
 
-#@lru_cache()
+@lru_cache()
 def _get_fixRank():
     #
     with open(Var.out_allRank_flpth) as fh: lines = fh.readlines()

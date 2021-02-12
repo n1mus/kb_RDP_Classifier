@@ -37,7 +37,7 @@ def dprint(*args, run='py', json=True, where=False, time=False, max_lines=MAX_LI
 
     if where:
         stack = inspect.stack()
-        print("(%s, line %d, %s)" % (stack[1][1], stack[1][2], stack[1][3]))
+        print("(%s, line %d, %s)" % (stack[1][1], stack[1][2], stack[1][3])) # file, line, func
     
     for arg in args:
         if time:

@@ -4,7 +4,9 @@ import unittest
 from unittest.mock import patch
 import json
 import uuid
+
 import numpy as np
+import pytest
 from pytest import raises
 
 from kb_RDP_Classifier.util.debug import dprint, where_am_i
