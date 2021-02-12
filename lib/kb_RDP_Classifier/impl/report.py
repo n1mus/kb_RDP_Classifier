@@ -66,7 +66,6 @@ def do_pie_hist(html_flpth):
     
     logging.info('Generating histogram') 
     rank2confs = ana.get_rank2confs()
-    #dprint('rank2confs', max_lines=None)
 
     hovertemplate = (
         'Rank: %s <br>'
@@ -92,7 +91,7 @@ def do_pie_hist(html_flpth):
         return list(zip(*ll))
 
     trace1_l = []
-    for i, (rank, conf_l) in list(enumerate(rank2confs.items()))[::-1]:
+    for i, (rank, conf_l) in enumerate(list(rank2confs.items())[::-1]):
         h = ana.hist_0_1_10(conf_l)
         #if rank == 'domain': dprint('rank', 'conf_l', 'h', 'len(h)')
         trace1_l.append(
@@ -131,7 +130,7 @@ def do_pie_hist(html_flpth):
     )
 
     fig.add_trace(trace0, row=1, col=1)
-    for trace1 in trace1_l:
+    for trace1 in trace1_l[::-1]:
         fig.add_trace(trace1, row=2, col=1)
 
     fig.update_xaxes(

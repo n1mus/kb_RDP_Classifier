@@ -121,7 +121,7 @@ class kb_RDP_ClassifierTest(cfg.BaseTest):
     ####################
     @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.DataFileUtil', new=lambda u: get_mock_dfu('enigma50by30'))
     @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.GenericsAPI', new=lambda *a, **k: get_mock_gapi('enigma50by30'))
-    #@patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.run_check', new=get_mock_run_check('enigma50by30', non_default_gene='silva_138_ssu'))
+    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.run_check', new=get_mock_run_check('enigma50by30', non_default_gene='silva_138_ssu'))
     @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.KBaseReport', new=lambda u: get_mock_kbr())
     def test_custom_small(self):
         ret = self.serviceImpl.run_classify(
