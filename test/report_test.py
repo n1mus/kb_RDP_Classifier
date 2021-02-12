@@ -90,41 +90,40 @@ def test_small_linspace():
 
 ####################################################################################################
 ####################################################################################################
-def test_dummy():
+@pytest.mark.parametrize('i,conf', list(enumerate(np.linspace(0, 1, 11))))
+def test_dummy(i, conf):
     out_dir = os.path.join(testData_dir, 'by_dataset_input/dummy10by8/return/RDP_Classifier_output')
-    Var.out_fixRank_flpth = os.path.join(out_dir, 'out_fixRank.tsv')
-    for i, conf in enumerate(np.linspace(0, 1, 11)):
-        #if conf != 1: continue
-        Var.report_dir = os.path.join(run_dir, 'report_dummy10by8_conf%g' % conf)
-        os.mkdir(Var.report_dir)
-        Var.params = Params(dict(
-            **req,
-            conf=conf,
-        ))
+    Var.out_allRank_flpth = os.path.join(out_dir, 'out_allRank.tsv')
+    Var.report_dir = os.path.join(run_dir, 'report_dummy10by8_conf%g' % conf)
+    os.mkdir(Var.report_dir)
+    Var.params = Params(dict(
+        **req,
+        conf=conf,
+    ))
 
-        html_links = report.HTMLReportWriter(
-            cmd_l = ['test,', 'test,', 'dummy10by8', 'conf=%g' % conf]
-        ).write()
+    html_links = report.HTMLReportWriter(
+        cmd_l = ['test,', 'test,', 'dummy10by8', 'conf=%g' % conf]
+    ).write()
 
 ####################################################################################################
 ####################################################################################################
-def test_tiny():
+@pytest.mark.parametrize('i', list(range(5)))
+def test_tiny(i):
     out_dir = os.path.join(testData_dir, 'by_dataset_input/dummyTiny/return/RDP_Classifier_output')
-    for i in range(5):
-        Var.out_fixRank_flpth = os.path.join(out_dir, 'out_fixRank%d.tsv' % i)
-        Var.report_dir = os.path.join(run_dir, 'report_dummyTiny_%d' % i)
-        os.mkdir(Var.report_dir)
-        Var.params = Params(dict(
-            **req,
-            conf=0.55555,
-        ))
+    Var.out_allRank_flpth = os.path.join(out_dir, 'out_allRank%d.tsv' % i)
+    Var.report_dir = os.path.join(run_dir, 'report_dummyTiny_%d' % i)
+    os.mkdir(Var.report_dir)
+    Var.params = Params(dict(
+        **req,
+        conf=0.55555,
+    ))
 
-        with open(Var.out_fixRank_flpth) as fh:
-            fixRank_lines = fh.readlines()
+    with open(Var.out_allRank_flpth) as fh:
+        allRank_lines = fh.readlines()
 
-        html_links = report.HTMLReportWriter(
-            cmd_l = ['test,', 'test,', 'dummyTiny', 'i=%d' % i] + fixRank_lines
-        ).write()
+    html_links = report.HTMLReportWriter(
+        cmd_l = ['test,', 'test,', 'dummyTiny', 'i=%d' % i] + allRank_lines
+    ).write()
                
 
 

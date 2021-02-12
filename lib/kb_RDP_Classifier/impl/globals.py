@@ -55,3 +55,7 @@ tmp/                                        `shared_folder`
 
 Var = DotMap(config)
 
+def reset_Var():
+    Var.clear()
+    Var.update(config)
+

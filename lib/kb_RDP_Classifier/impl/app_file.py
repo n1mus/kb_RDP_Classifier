@@ -23,6 +23,10 @@ def _demangle(name):
 
 @lru_cache()
 def _get_fixRank():
+    '''
+    Return pandas DataFrame with id index and domain/domain_conf/.../genus/genus_conf columns
+    Skipped ranks have `None` values
+    '''
     #
     with open(Var.out_allRank_flpth) as fh: lines = fh.readlines()
 
@@ -71,6 +75,9 @@ def get_fixRank():
 
 
 def get_filtered_fixRank():
+    '''
+    Return same as fixRank but with filtered ranks with `None` values
+    '''
     df_fix = get_fixRank()
 
     for _, row in df_fix.iterrows():
@@ -88,6 +95,10 @@ def get_filtered_fixRank():
 
 
 def get_fix_filtered_id2tax():
+    '''
+    Different representation of filtered fixRank
+    Dict of strings
+    '''
     df = get_filtered_fixRank()[FIX_RANKS]
 
     def row_2_tax(row):
