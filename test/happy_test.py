@@ -22,10 +22,6 @@ import config as cfg
 
 class Test(cfg.BaseTest):
 
-    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.DataFileUtil', new=lambda *a, **k: mock_dfu)
-    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.GenericsAPI', new=lambda *a, **k: mock_gapi)
-    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.run_check', new=get_mock_run_check('enigma50by30'))
-    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.KBaseReport', new=lambda *a, **k: mock_kbr)
     def test_default_params(self):
         ret = self.serviceImpl.run_classify(
             self.ctx, {

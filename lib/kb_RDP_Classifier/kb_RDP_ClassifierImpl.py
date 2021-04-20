@@ -130,6 +130,13 @@ class kb_RDP_Classifier:
 
 
 
+
+        # cat and gunzip SILVA refdata
+        # which has been split into ~99MB chunks to get onto Github
+        #if params.is_custom():
+        #    app_file.prep_refdata()
+
+
         #
         ##
         ### load objects
@@ -137,15 +144,10 @@ class kb_RDP_Classifier:
         #####
 
         amp_mat = AmpliconMatrix(params['amp_mat_upa'])
+        row_attr_map_upa = amp_mat.obj.get('row_attributemapping_ref')
 
-        row_attr_map_ref = (
-            amp_mat.upa + ';' + amp_mat.obj['row_attributemapping_ref'] 
-            if 'row_attributemapping_ref' in amp_mat.obj else
-            None
-        )
-        create_row_attr_map = row_attr_map_ref is None
-        
-        row_attr_map = AttributeMapping(row_attr_map_ref, amp_mat=amp_mat)  
+        create_row_attr_map = row_attr_map_upa is None
+        row_attr_map = AttributeMapping(row_attr_map_upa, amp_mat=amp_mat)  
 
 
         #
