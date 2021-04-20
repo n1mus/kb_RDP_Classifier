@@ -1,4 +1,5 @@
 from unittest.mock import patch
+import random
 
 import numpy as np
 import pandas as pd
@@ -13,7 +14,43 @@ from kb_RDP_Classifier.impl.ana import (
 
 
 def test_TaxTree():
-    pass
+    tax_l = [
+        '',
+        'D0;',
+        'D0;P00;',
+        'D0;P01;',
+        'D0;P01;C010;',
+        'D0;P01;C011;',
+        'D1;P10;C100;O1000;F10000;G100000;',
+    ]
+
+    random.shuffle(tax_l)
+    id2tax = {'id%d' % i: tax for i, tax in enumerate(tax_l)}
+
+    TaxTree.build(id2tax)
+    names, parent_ids, counts, ids, color_ids = TaxTree.get_sunburst_lists()
+
+    assert names == [
+        'Root', 'D0', 'P00', 'P01', 'C010', 'C011', 'D1', 'P10', 'C100', 'O1000', 'F10000', 'G100000'
+    ]
+    assert counts == [
+        7,      5,    1,      3,    1,       1,     1,    1,     1,      1,       1,        1
+    ]
+    assert color_ids == [
+        'Root', 'D0', 'P00', 'P01', 'P01',  'P01',  'D1', 'P10', 'P10',  'P10',   'P10',    'P10'
+    ]
+
+    assert ids == [
+        'Root;', 'Root;D0;', 'Root;D0;P00;', 'Root;D0;P01;', 'Root;D0;P01;C010;', 'Root;D0;P01;C011;',
+        'Root;D1;', 'Root;D1;P10;', 'Root;D1;P10;C100;', 'Root;D1;P10;C100;O1000;', 'Root;D1;P10;C100;O1000;F10000;', 
+        'Root;D1;P10;C100;O1000;F10000;G100000;', 
+    ]
+
+    assert parent_ids == [
+        '', 'Root;', 'Root;D0;', 'Root;D0;', 'Root;D0;P01;', 'Root;D0;P01;',
+        'Root;', 'Root;D1;', 'Root;D1;P10;', 'Root;D1;P10;C100;', 'Root;D1;P10;C100;O1000;', 
+        'Root;D1;P10;C100;O1000;F10000;', 
+    ]
 
 
 def test_get_rank2confs():

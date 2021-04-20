@@ -1,9 +1,11 @@
 from unittest.mock import create_autospec
 import os
 import sys
-from shutil import rmtree, copytree
+import shutil
 import logging
 import json
+from pathlib import Path
+from functools import lru_cache
 
 from installed_clients.DataFileUtilClient import DataFileUtil
 from installed_clients.KBaseReportClient import KBaseReport
@@ -13,16 +15,19 @@ from kb_RDP_Classifier.util.cli import run_check
 from kb_RDP_Classifier.util.debug import dprint
 from kb_RDP_Classifier.impl.globals import Var
 
-
-##################################
-##################################
-testData_dir = '/kb/module/test/data'
-##################################
-##################################
-
 ####################################################################################################
 ################################ CI ################################################################
 ####################################################################################################
+enigma50by30 = '61042/5/1'
+enigma50by30_noAttrMaps = '61042/6/1'
+enigma50by30_noAttrMaps_tooShortSeqs = '61042/7/1'
+
+ANL_amp = '61042/3/1'
+ANL_amp_row_attributes = '61042/2/1'
+
+userTest = '58225/2/1'
+
+'''
 enigma50by30_noAttrMaps = '55136/4/1'
 enigma50by30_noAttrMaps_tooShortSeqs = '55136/6/1'
 
@@ -31,10 +36,7 @@ enigma50by30_rowAttrMap = '55136/11/1'
 
 enigma17770by511 = '55136/26/1' # AmpliconMatrix
 enigma17770by511_rowAttrMap = '55136/19/1'
-
-
-userTest = '58225/2/1'
-
+'''
 ####################################################################################################
 ############################### appdev #############################################################
 ####################################################################################################
@@ -50,69 +52,93 @@ dummy10by8_AttrMap = 'dummy/10by8/AttrMap'
 
 
 
+TEST_DATA_DIR = '/kb/module/test/data'
+GET_OBJECTS_DIR = TEST_DATA_DIR + '/get_objects'
+FETCH_SEQUENCE_DIR = TEST_DATA_DIR + '/fetch_sequence'
+WORK_DIR = '/kb/module/work/tmp'
+CACHE_DIR = WORK_DIR + '/cache_test_data'
 
-def get_mock_gapi(dataset):
+## MOCK GAPI ##
+
+def mock_gapi_fetch_sequence(params):
+    logging.info('Mocking `gapi.fetch_sequence(%s)`' % str(params))
+
+    upa = ref_leaf(params)
+    fp = _glob_upa(FETCH_SEQUENCE_DIR, upa)
+    
+    # Download and cache
+    if fp is None:
+        logging.info('Calling in cache mode `gapi.fetch_sequence(%s)`' % str(params))
+
+        gapi = GenericsAPI(os.environ['SDK_CALLBACK_URL'], service_ver='dev')
+        fp_work = gapi.fetch_sequence(params)
+        fp_cache = os.path.join(
+            mkcache(FETCH_SEQUENCE_DIR),
+            file_safe_ref(upa) + '.fa'
+        )
+        shutil.copyfile(
+            fp_work,
+            fp_cache
+        )
+        return fp_work
+
+    # Pull from cache
+    else:
+        return fp
+
+
+def get_mock_gapi():
     mock_gapi = create_autospec(GenericsAPI, instance=True)
-
-    def mock_gapi_fetch_sequence(params):
-        logging.info('Mocking `gapi.fetch_sequence` with `params=%s`' % str(params))
-
-        flpth = os.path.join(testData_dir, 'by_dataset_input', dataset, 'fetch_sequence/seqs.fna')
-        return flpth
-
     mock_gapi.fetch_sequence.side_effect = mock_gapi_fetch_sequence
-
     return mock_gapi
+
+mock_gapi = get_mock_gapi()
         
 
+## MOCK DFU ##
 
-def get_mock_dfu(dataset):
-    '''
-    Avoid lengthy `get_objects` and `save_objects`
-    '''
+def mock_dfu_save_objects(params):
+    logging.info('Mocking dfu.save_objects(%s)' % str(params)[:200] + '...' if len(str(params)) > 200 else params)
 
-    mock_dfu = create_autospec(DataFileUtil, instance=True)
+    return [['mock', 1, 2, 3, 'dfu', 5, 'save_objects']] # UPA made from pos 6/0/4
 
-    ##
-    ## mock `save_objects` # TODO tease save and get apart
-    def mock_dfu_save_objects(params):
-        params_str = str(params)
-        if len(params_str) > 100: params_str = params_str[:100] + ' ...'
-        logging.info('Mocking `dfu.save_objects` with `params=%s`' % params_str)
+def mock_dfu_get_objects(params):
+    logging.info('Mocking `dfu.get_objects(%s)`' % params)
 
-        return [['mock', 1, 2, 3, 'dfu', 5, 'save_objects']] # UPA made from pos 6/0/4
-    
-    mock_dfu.save_objects.side_effect = mock_dfu_save_objects
+    upa = ref_leaf(params['object_refs'][0])
+    fp = _glob_upa(GET_OBJECTS_DIR, upa)
 
-    ##
-    ## mock `get_objects`
-    def mock_dfu_get_objects(params):
-        logging.info('Mocking `dfu.get_objects` with `params=%s`' % str(params))
+    # Download and cache
+    if fp is None:
+        logging.info('Calling in cache mode `dfu.get_objects`')
 
-        upa = params['object_refs'][0].split(';')[-1]
-        flnm = {
-            enigma50by30_noAttrMaps: 'AmpliconMatrix.json',
-            enigma50by30_noAttrMaps_tooShortSeqs: 'AmpliconMatrix.json',
-            enigma50by30: 'AmpliconMatrix.json',
-            enigma50by30_rowAttrMap: 'row_AttributeMapping.json',
-            enigma17770by511: 'AmpliconMatrix.json',
-            enigma17770by511_rowAttrMap: 'row_AttributeMapping.json',
-            dummy10by8_AmpMat_wRowAttrMap: 'get_objects_AmpliconMatrix_wRowAttrMap.json',
-            dummy10by8_AmpMat_noRowAttrMap: 'get_objects_AmpliconMatrix_noRowAttrMap.json',
-            dummy10by8_AttrMap: 'get_objects_AttributeMapping.json',
-            userTest: 'AmpliconMatrix.json',
-            }[upa]
-        flpth = os.path.join(testData_dir, 'by_dataset_input', dataset, 'get_objects', flnm)
-
-        with open(flpth) as f:
-            obj = json.load(f)
-
+        dfu = DataFileUtil(os.environ['SDK_CALLBACK_URL'])
+        obj = dfu.get_objects(params)
+        fp = os.path.join(
+            mkcache(GET_OBJECTS_DIR),
+            file_safe_ref(upa) + TRANSFORM_NAME_SEP + obj['data'][0]['info'][1] + '.json'
+        )
+        with open(fp, 'w') as fh: json.dump(obj, fh)
         return obj
 
-    mock_dfu.get_objects.side_effect = mock_dfu_get_objects
+    # Pull from cache
+    else:
+        with open(fp) as fh:
+            obj = json.load(fh)
+        return obj
 
+
+def get_mock_dfu():
+    mock_dfu = create_autospec(DataFileUtil, instance=True, spec_set=True)
+    mock_dfu.save_objects.side_effect = mock_dfu_save_objects
+    mock_dfu.get_objects.side_effect = mock_dfu_get_objects
     return mock_dfu
 
+mock_dfu = get_mock_dfu()
+
+
+
+## MOCK RUN_CHECK
 
 def get_mock_run_check(dataset, non_default_gene=False):
     '''
@@ -130,14 +156,14 @@ def get_mock_run_check(dataset, non_default_gene=False):
              ret_dir += '_' + non_default_gene
 
         # test data
-        src_drpth = os.path.join(testData_dir, 'by_dataset_input', dataset, ret_dir, 'RDP_Classifier_output')
+        src_drpth = os.path.join(TEST_DATA_DIR, 'return', dataset, ret_dir, 'RDP_Classifier_output')
 
         # check if it already exists
         # since app may create it before run, and
         # since `check_run` is called twice in this app
         if os.path.exists(Var.out_dir):
-            rmtree(Var.out_dir)
-        copytree(src_drpth, Var.out_dir)
+            shutil.rmtree(Var.out_dir)
+        shutil.copytree(src_drpth, Var.out_dir)
 
 
     mock_run_check.side_effect = mock_run_check_
@@ -145,28 +171,41 @@ def get_mock_run_check(dataset, non_default_gene=False):
     return mock_run_check
 
 
-def get_mock_kbr(dataset=None): 
-    '''
-    Avoid lengthy `create_extended_report`
+## MOCK KBR ##
 
-    Does not use input currently
-    '''
+def mock_create_extended_report(params):
+    logging.info('Mocking `kbr.create_extended_report`')
 
-    mock_kbr = create_autospec(KBaseReport, instance=True) 
+    return {
+        'name': 'kbr_mock_name',
+        'ref': 'kbr/mock/ref',
+    }
 
-    # mock `create_extended_report`
-    def mock_create_extended_report(params):
-        logging.info('Mocking `kbr.create_extended_report`')
+mock_kbr = create_autospec(KBaseReport, instance=True, spec_set=True) 
+mock_kbr.create_extended_report.side_effect = mock_create_extended_report
 
-        return {
-            'name': 'kbr_mock_name',
-            'ref': 'kbr/mock/ref',
-        }
+## UTIL ##
 
-    mock_kbr.create_extended_report.side_effect = mock_create_extended_report
-    
-    return mock_kbr
+def mkcache(dir):
+    dir = dir.replace(TEST_DATA_DIR, CACHE_DIR)
+    os.makedirs(dir, exist_ok=True)
+    return dir
 
+def _glob_upa(data_dir, upa):
+    p_l = list(Path(data_dir).glob(file_safe_ref(upa) + '*'))
+    if len(p_l) == 0:
+        return None
+    elif len(p_l) > 1:
+        raise Exception(upa)
 
+    src_p = str(p_l[0])
 
+    return src_p
 
+def ref_leaf(ref):
+    return ref.split(';')[-1]
+
+def file_safe_ref(ref):
+    return ref.replace('/', '.').replace(';', '_')
+
+TRANSFORM_NAME_SEP = '_'

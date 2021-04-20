@@ -30,7 +30,7 @@ def test_get_fix_filtered_id2tax():
     '''
     Test: demangling, skipped ranks, filtered ranks
     '''
-    Var.out_allRank_flpth = os.path.join(testData_dir, 'example_allRank.tsv') # old one without 'Genera Incertae Sedis'
+    Var.out_allRank_flpth = os.path.join(TEST_DATA_DIR, 'example_allRank.tsv') # old one without 'Genera Incertae Sedis'
     Var.params = Params({
         **req,
         'conf': 0.8

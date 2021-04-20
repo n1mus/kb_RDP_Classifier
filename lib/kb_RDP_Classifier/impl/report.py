@@ -176,7 +176,7 @@ def do_sunburst(html_flpth,png_flpth):
 
     logging.info('Generating sunburst')
 
-    ana.TaxTree.build()
+    ana.TaxTree.build(app_file.get_fix_filtered_id2tax())
     names, parents, counts, paths, color_ids = ana.TaxTree.get_sunburst_lists() # first el is Root
 
     palette = px.colors.qualitative.Alphabet

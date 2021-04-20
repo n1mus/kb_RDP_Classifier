@@ -76,7 +76,7 @@ def get_fixRank():
 
 def get_filtered_fixRank():
     '''
-    Return same as fixRank but with filtered ranks with `None` values
+    Return same as fixRank but with filtered-by-confidence ranks with `None` values
     '''
     df_fix = get_fixRank()
 

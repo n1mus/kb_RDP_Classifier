@@ -17,7 +17,7 @@ from config import *
 
 ####################
 ####################
-@patch.dict('kb_RDP_Classifier.impl.kbase_obj.Var', values={'dfu': get_mock_dfu('dummy10by8'), 'warnings': []})
+@patch.dict('kb_RDP_Classifier.impl.kbase_obj.Var', values={'dfu': mock_dfu, 'warnings': []})
 def test_wRowAttrMap():
     '''
     Test row AttributeMapping behavior when AmpliconMatrix has row AttributeMapping
@@ -90,7 +90,7 @@ def test_wRowAttrMap():
 
 ####################
 ####################
-@patch.dict('kb_RDP_Classifier.impl.kbase_obj.Var', values={'dfu': get_mock_dfu('dummy10by8')})
+@patch.dict('kb_RDP_Classifier.impl.kbase_obj.Var', values={'dfu': mock_dfu})
 def test_noRowAttrMap():
     '''
     Test row AttributeMapping behavior when AmpliconMatrix has no row AttributeMapping

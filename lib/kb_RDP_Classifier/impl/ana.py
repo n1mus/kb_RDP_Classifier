@@ -42,8 +42,7 @@ class TaxTree:
                 return self.path_l[2]
         
     @classmethod
-    def build(cls) -> None:
-        id2tax = app_file.get_fix_filtered_id2tax()
+    def build(cls, id2tax) -> None:
         id2tax = {
             id: ROOT_PATH + tax for id, tax in id2tax.items()
         }
