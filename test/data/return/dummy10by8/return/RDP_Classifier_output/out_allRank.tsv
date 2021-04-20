@@ -1,0 +1,10 @@
+amplicon_id_0		Root	rootrank	1.0	Bacteria	domain	1.0	Proteobacteria	phylum	1.0	Alphaproteobacteria	class	1.0	Rhizobiales	order	1.0	Xanthobacteraceae	family	1.0	uncultured (taxid:2554)	genus	0.86
+amplicon_id_1		Root	rootrank	1.0	Bacteria	domain	0.99	Gemmatimonadota	phylum	0.51	Longimicrobia	class	0.47	Longimicrobiales	order	0.47	Longimicrobiaceae	family	0.47	Longimicrobium	genus	0.37
+amplicon_id_2		Root	rootrank	1.0	Bacteria	domain	1.0	Verrucomicrobiota	phylum	1.0	Omnitrophia	class	1.0	Omnitrophales	order	1.0	Omnitrophaceae	family	1.0	Candidatus Omnitrophus	genus	1.0
+amplicon_id_3		Root	rootrank	1.0	Bacteria	domain	1.0	Verrucomicrobiota	phylum	1.0	Verrucomicrobiae	class	1.0	Pedosphaerales	order	1.0	Pedosphaeraceae	family	1.0	SCGC AAA164-E04	genus	0.52
+amplicon_id_4		Root	rootrank	1.0	Bacteria	domain	1.0	Proteobacteria	phylum	1.0	Gammaproteobacteria	class	1.0	Burkholderiales	order	1.0	Nitrosomonadaceae	family	1.0	MND1	genus	1.0
+amplicon_id_5		Root	rootrank	1.0	Bacteria	domain	0.52	Cyanobacteria	phylum	0.16	Cyanobacteriia	class	0.16	Cyanobacteriales	order	0.15	Xenococcaceae	family	0.06	Foliisarcina	genus	0.06
+amplicon_id_6		Root	rootrank	1.0	Bacteria	domain	1.0	Proteobacteria	phylum	1.0	Gammaproteobacteria	class	1.0	Burkholderiales	order	1.0	Comamonadaceae	family	1.0	Rhodoferax	genus	0.8
+amplicon_id_7		Root	rootrank	1.0	Bacteria	domain	1.0	Proteobacteria	phylum	1.0	Gammaproteobacteria	class	1.0	Burkholderiales	order	0.99	Nitrosomonadaceae	family	0.46	P3OB-51	genus	0.16
+amplicon_id_8		Root	rootrank	1.0	Bacteria	domain	1.0	Proteobacteria	phylum	1.0	Gammaproteobacteria	class	1.0	Burkholderiales	order	0.99	Nitrosomonadaceae	family	0.46	P3OB-51	genus	0.16
+amplicon_id_9		Root	rootrank	1.0	Bacteria	domain	0.99	Proteobacteria	phylum	0.99	Gammaproteobacteria	class	0.99	Burkholderiales	order	0.97	Chitinibacteraceae	family	0.27	Formivibrio	genus	0.11

@@ -1,0 +1,10 @@
+amplicon_id_0		Bacteria	domain	1.0	"Proteobacteria"	phylum	1.0	Alphaproteobacteria	class	1.0	Rhizobiales	order	1.0	Hyphomicrobiaceae	family	0.43	Rhodoplanes	genus	0.37
+amplicon_id_1		Bacteria	domain	1.0	"Gemmatimonadetes"	phylum	0.33	Gemmatimonadetes	class	0.33	Gemmatimonadales	order	0.33	Gemmatimonadaceae	family	0.33	Gemmatimonas	genus	0.33
+amplicon_id_2		Bacteria	domain	0.97	Omnitrophica	phylum	0.07	Omnitrophica_genera_incertae_sedis	class	0.07	Omnitrophica_genera_incertae_sedis	order	0.07	Omnitrophica_genera_incertae_sedis	family	0.07	Omnitrophica_genera_incertae_sedis	genus	0.07
+amplicon_id_3		Bacteria	domain	1.0	"Verrucomicrobia"	phylum	0.95	Subdivision3	class	0.89	Subdivision3_genera_incertae_sedis	order	0.84	Subdivision3_genera_incertae_sedis	family	0.84	Subdivision3_genera_incertae_sedis	genus	0.84
+amplicon_id_4		Bacteria	domain	1.0	"Proteobacteria"	phylum	1.0	Betaproteobacteria	class	0.97	Rhodocyclales	order	0.53	Rhodocyclaceae	family	0.53	Sulfuritalea	genus	0.34
+amplicon_id_5		Bacteria	domain	0.97	Parcubacteria	phylum	0.4	Parcubacteria_genera_incertae_sedis	class	0.4	Parcubacteria_genera_incertae_sedis	order	0.4	Parcubacteria_genera_incertae_sedis	family	0.4	Parcubacteria_genera_incertae_sedis	genus	0.4
+amplicon_id_6		Bacteria	domain	1.0	"Proteobacteria"	phylum	1.0	Betaproteobacteria	class	1.0	Burkholderiales	order	1.0	Comamonadaceae	family	0.85	Acidovorax	genus	0.23
+amplicon_id_7		Bacteria	domain	1.0	"Proteobacteria"	phylum	1.0	Betaproteobacteria	class	0.99	Nitrosomonadales	order	0.39	Nitrosomonadaceae	family	0.39	Nitrosospira	genus	0.33
+amplicon_id_8		Bacteria	domain	1.0	"Proteobacteria"	phylum	1.0	Betaproteobacteria	class	0.96	Neisseriales	order	0.36	Neisseriaceae	family	0.36	Formivibrio	genus	0.19
+amplicon_id_9		Bacteria	domain	1.0	"Proteobacteria"	phylum	1.0	Gammaproteobacteria	class	1.0	Legionellales	order	1.0	Coxiellaceae	family	1.0	Aquicella	genus	1.0

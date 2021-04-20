@@ -2,9 +2,11 @@ test_local
 sdk.cfg
 .*.sw[a-z]
 *.py.bak*
-*tmp
+*.tmp
+tmp
+tmp/
+tmp.py
 .idea/
-test/data/
 __pycache__/
 data/refdata.tgz
 data/SILVA_138_SSU_parameters/
