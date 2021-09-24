@@ -76,16 +76,14 @@ class AmpliconMatrix:
 
     def save(self, name=None):
 
-        info = Var.dfu.save_objects({
-            "id": Var.params['workspace_id'],
-            "objects": [{
-                "type": self.OBJ_TYPE, # TODO version
-                "data": self.obj,
-                "name": name if name else self.name,
-                "extra_provenance_input_refs": [self.upa],
-             }]})[0]
+        logging.info('Saving AmpliconMatrix using Generics API')
 
-        upa_new = "%s/%s/%s" % (info[6], info[0], info[4])
+        upa_new = Var.gapi.save_object({
+            'obj_type': self.OBJ_TYPE,  # TODO version
+            'obj_name': name if name else self.name,
+            'data': self.obj,
+            'workspace_id': Var.params['workspace_id'],
+        })['obj_ref']
 
         return upa_new
 
