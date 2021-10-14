@@ -1,0 +1,3 @@
+[submodule "train_rdp_clsf"]
+	path = train_rdp_clsf
+	url = https://github.com/kbase/train_rdp_clsf
