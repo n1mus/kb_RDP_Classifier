@@ -1,18 +1,20 @@
 import os
-import unittest
 from unittest.mock import patch
 import json
 import uuid
-import numpy as np
-from pytest import raises
 
-from kb_RDP_Classifier.util.debug import dprint, where_am_i
+from kb_RDP_Classifier.util.debug import dprint
 from kb_RDP_Classifier.impl.globals import Var
 from kb_RDP_Classifier.impl.params import Params
 from kb_RDP_Classifier.impl.kbase_obj import AmpliconMatrix, AttributeMapping
-from kb_RDP_Classifier.impl import report
-from data import *
-from config import *
+from data import (
+    dummy10by8_AmpMat_noRowAttrMap,
+    dummy10by8_AmpMat_wRowAttrMap,
+    mock_dfu,
+)
+from config import (
+    scratch
+)
 
 
 ####################
@@ -24,14 +26,14 @@ def test_wRowAttrMap():
     Row AttributeMapping indices should be in sync with AmpliconMatrix indices (1 to 1)
     '''
     Var.run_dir = os.path.join(
-        scratch, 
+        scratch,
         'test_AmpliconMatix_wRowAttributeMapping_AttributeMapping_' + str(uuid.uuid4())
     )
 
     amp_mat = AmpliconMatrix(dummy10by8_AmpMat_wRowAttrMap)
     assert len(Var.warnings) == 0
 
-    attr_map = AttributeMapping(amp_mat.obj.get('row_attributemapping_ref'), amp_mat) # has attributes `biome` and `celestial body`
+    attr_map = AttributeMapping(amp_mat.obj.get('row_attributemapping_ref'), amp_mat)  # has attributes `biome` and `celestial body`
 
     ##
     ## write new attribute
@@ -79,7 +81,7 @@ def test_wRowAttrMap():
     for attr_l in attr_map.obj['instances'].values():
         assert len(attr_l) == num_attr
 
-    ## 
+    ##
     ## check did not add dummy attribute to wrong slot
     ind_lftvr = list(set(range(num_attr)) - {ind_0, ind_1})
 
@@ -96,7 +98,7 @@ def test_noRowAttrMap():
     Test row AttributeMapping behavior when AmpliconMatrix has no row AttributeMapping
     '''
     Var.run_dir = os.path.join(
-        scratch, 
+        scratch,
         'test_AmpliconMatix_noRowAttributeMapping_AttributeMapping_' + str(uuid.uuid4())
     )
     Var.params = Params(dict(
@@ -135,6 +137,3 @@ def test_noRowAttrMap():
     num_attr = len(attr_map.obj['attributes'])
     for attr_l in attr_map.obj['instances'].values():
         assert len(attr_l) == num_attr
-
-
-

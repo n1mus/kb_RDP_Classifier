@@ -42,14 +42,14 @@ def test_TaxTree():
 
     assert ids == [
         'Root;', 'Root;D0;', 'Root;D0;P00;', 'Root;D0;P01;', 'Root;D0;P01;C010;', 'Root;D0;P01;C011;',
-        'Root;D1;', 'Root;D1;P10;', 'Root;D1;P10;C100;', 'Root;D1;P10;C100;O1000;', 'Root;D1;P10;C100;O1000;F10000;', 
-        'Root;D1;P10;C100;O1000;F10000;G100000;', 
+        'Root;D1;', 'Root;D1;P10;', 'Root;D1;P10;C100;', 'Root;D1;P10;C100;O1000;', 'Root;D1;P10;C100;O1000;F10000;',
+        'Root;D1;P10;C100;O1000;F10000;G100000;',
     ]
 
     assert parent_ids == [
         '', 'Root;', 'Root;D0;', 'Root;D0;', 'Root;D0;P01;', 'Root;D0;P01;',
-        'Root;', 'Root;D1;', 'Root;D1;P10;', 'Root;D1;P10;C100;', 'Root;D1;P10;C100;O1000;', 
-        'Root;D1;P10;C100;O1000;F10000;', 
+        'Root;', 'Root;D1;', 'Root;D1;P10;', 'Root;D1;P10;C100;', 'Root;D1;P10;C100;O1000;',
+        'Root;D1;P10;C100;O1000;F10000;',
     ]
 
 
@@ -61,22 +61,22 @@ def test_get_rank2confs():
             ['D', 0.9, 'P', 0.8, np.nan, np.nan, 'O', 0.6, np.nan, np.nan, np.nan, np.nan],
         ],
         columns=[
-            'domain', 'domain_conf', 
-            'phylum', 'phylum_conf', 
-            'class', 'class_conf', 
-            'order', 'order_conf', 
-            'family', 'family_conf', 
+            'domain', 'domain_conf',
+            'phylum', 'phylum_conf',
+            'class', 'class_conf',
+            'order', 'order_conf',
+            'family', 'family_conf',
             'genus', 'genus_conf',
         ],
         index=list('abc'),
     )
 
     rank2confs = {
-        'domain': [0.9,0.9,0.9], 
-        'phylum': [0.8,0.8,0.8], 
-        'class':  [0.7,0.7], 
-        'order':  [0.6,0.6,0.6], 
-        'family': [0.5,0.5], 
+        'domain': [0.9,0.9,0.9],
+        'phylum': [0.8,0.8,0.8],
+        'class':  [0.7,0.7],
+        'order':  [0.6,0.6,0.6],
+        'family': [0.5,0.5],
         'genus':  [0.4],
     }
 
@@ -98,14 +98,14 @@ def test_get_cutoff_rank_counts():
 
     counts = {
         'root': 1,
-        'domain': 1, 
-        'phylum': 1, 
-        'class': 1, 
-        'order': 1, 
-        'family': 1, 
+        'domain': 1,
+        'phylum': 1,
+        'class': 1,
+        'order': 1,
+        'family': 1,
         'genus': 1,
     }
-    
+
     with patch('kb_RDP_Classifier.impl.app_file.get_fix_filtered_id2tax', new=lambda: id2tax):
         assert get_cutoff_rank_counts() == counts, \
             '%s vs %s' % (get_cutoff_rank_counts(), counts)
@@ -136,7 +136,7 @@ def test_hist_0_1_10():
     ]
 
     for q, e in expected:
-        r = hist_0_1_10(q) 
+        r = hist_0_1_10(q)
         assert np.all(r == e), \
             '%s vs %s' % (hist_0_1_10(q), e)
         #dprint(
@@ -145,7 +145,3 @@ def test_hist_0_1_10():
         #    'np.array(e)',
         #    'len(e)',
         #)
-
-
-
-

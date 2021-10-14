@@ -21,7 +21,7 @@ from .impl.params import Params
 from .impl import report
 from .impl.globals import Var
 from .impl.kbase_obj import  AmpliconMatrix, AttributeMapping
-from .impl import app_file 
+from .impl import app_file
 from .util.debug import dprint
 from .util.misc import get_numbered_duplicate
 from .util.cli import run_check
@@ -48,8 +48,8 @@ class kb_RDP_Classifier:
     # the latter method is running.
     ######################################### noqa
     VERSION = "0.0.1"
-    GIT_URL = "https://github.com/kbaseapps/kb_rdp_classifier"
-    GIT_COMMIT_HASH = "c4b663e59f21843028649b3af948249da378808b"
+    GIT_URL = "https://github.com/kbaseapps/kb_RDP_Classifier"
+    GIT_COMMIT_HASH = "d8be422362a9166f4c3441c826be1d16ecdcabe2"
 
     #BEGIN_CLASS_HEADER
     #END_CLASS_HEADER
@@ -83,7 +83,7 @@ class kb_RDP_Classifier:
 
         params = Params(params)
         Var.params = params
-        
+
         '''
         tmp/                                        `shared_folder`
         └── kb_rdp_clsf_<uuid>/                      `run_dir`
@@ -147,7 +147,7 @@ class kb_RDP_Classifier:
         row_attr_map_upa = amp_mat.obj.get('row_attributemapping_ref')
 
         create_row_attr_map = row_attr_map_upa is None
-        row_attr_map = AttributeMapping(row_attr_map_upa, amp_mat=amp_mat)  
+        row_attr_map = AttributeMapping(row_attr_map_upa, amp_mat=amp_mat)
 
 
         #
@@ -158,12 +158,12 @@ class kb_RDP_Classifier:
 
         fasta_flpth = os.path.join(Var.return_dir, 'study_seqs.fna')
         Var.out_allRank_flpth = os.path.join(Var.out_dir, 'out_allRank.tsv')
-        Var.out_shortSeq_flpth = os.path.join(Var.out_dir, 'out_unclassifiedShortSeqs.txt') # seqs too short to classify
+        Var.out_shortSeq_flpth = os.path.join(Var.out_dir, 'out_unclassifiedShortSeqs.txt')  # seqs too short to classify
 
         shutil.copyfile(amp_mat.get_fasta(), fasta_flpth)
 
-        cmd = (  
-            'java -Xmx4g -jar %s classify %s ' % (Var.classifier_jar_flpth, fasta_flpth) 
+        cmd = (
+            'java -Xmx4g -jar %s classify %s ' % (Var.classifier_jar_flpth, fasta_flpth)
             + ' '.join(params.cli_args) + ' '
             + '--format allRank '
             + '--outputFile %s --shortseq_outfile %s' % (Var.out_allRank_flpth, Var.out_shortSeq_flpth)
@@ -179,10 +179,10 @@ class kb_RDP_Classifier:
         ####
         #####
 
-        id2taxStr = app_file.get_fix_filtered_id2tax() 
+        id2taxStr = app_file.get_fix_filtered_id2tax()
 
         # get ids of classified and unclassified seqs
-        shortSeq_id_l = app_file.parse_shortSeq() # sequences too short to get clsf
+        shortSeq_id_l = app_file.parse_shortSeq()  # sequences too short to get clsf
         classified_id_l = list(id2taxStr.keys())
 
         # make sure classifieds and shorts complement
@@ -192,7 +192,7 @@ class kb_RDP_Classifier:
             assert ret == mat, \
                 'diff1: %s, diff2: %s' % (set(ret)-set(mat), set(mat)-set(ret))
 
-        if len(classified_id_l) == 0: 
+        if len(classified_id_l) == 0:
             raise Exception('No sequences were long enough to be classified')
 
         # add in id->'' for unclassified seqs
@@ -214,7 +214,7 @@ class kb_RDP_Classifier:
         prose_args = params.get_prose_args()
 
         attribute = (
-            'RDP Classifier Taxonomy (conf=%s, gene=%s)' 
+            'RDP Classifier Taxonomy (conf=%s, gene=%s)'
             % (prose_args['conf'], prose_args['gene'])
         )
         attribute_names = row_attr_map.get_attribute_names()
@@ -245,15 +245,15 @@ class kb_RDP_Classifier:
         amp_mat_upa_new = amp_mat.save(amp_mat_output_name)
 
         objects_created = [
-            dict( # row AttrMap
-                ref=row_attr_map_upa_new, 
+            dict(  # row AttrMap
+                ref=row_attr_map_upa_new,
                 description='%sAdded attribute `%s`' % (
                     'Created. ' if create_row_attr_map else '',
                     attribute,
                 )
             ),
-            dict( # AmpMat
-                ref=amp_mat_upa_new, 
+            dict(  # AmpMat
+                ref=amp_mat_upa_new,
                 description='Updated amplicon AttributeMapping reference to `%s`' % row_attr_map_upa_new
             ),
         ]
@@ -309,7 +309,7 @@ class kb_RDP_Classifier:
             'direct_html_link_index': 0,
             'file_links': file_links,
             'workspace_id': params['workspace_id'],
-            'html_window_height': Var.report_height, 
+            'html_window_height': Var.report_height,
         }
 
         # testing

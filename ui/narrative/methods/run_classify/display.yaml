@@ -43,8 +43,10 @@ parameters :
         ui-name : |
             gene
         short-hint : |
-            Reference dataset and gene to classify against
-           
+            Reference dataset and gene to classify against<br>
+            SSU - Ribosomal small subunit<br>
+            LSU - Ribosomal large subunit<br>
+            ITS - Ribosomal internal transcribed spacer
     
 
 parameter-groups:

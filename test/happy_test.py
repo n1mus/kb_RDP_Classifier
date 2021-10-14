@@ -1,27 +1,29 @@
-# -*- coding: utf-8 -*-
-import os
-import time
 import unittest
-from unittest.mock import patch
-from configparser import ConfigParser
-import json
-import uuid
 
-import numpy as np
 import pytest
 
-from kb_RDP_Classifier.kb_RDP_ClassifierImpl import kb_RDP_Classifier
-from kb_RDP_Classifier.util.debug import dprint, where_am_i
+from kb_RDP_Classifier.util.debug import dprint
 from kb_RDP_Classifier.impl.globals import Var
-from kb_RDP_Classifier.impl.kbase_obj import AmpliconMatrix, AttributeMapping
-from data import *
-from config import patch_, patch_dict_
+from data import (
+    mock_dfu,
+    mock_gapi,
+    mock_kbr,
+    get_mock_run_check,
+    enigma50by30,
+    enigma50by30_noAttrMaps,
+    enigma50by30_noAttrMaps_tooShortSeqs,
+    userTest,
+    ANL_amp,
+)
+from config import patch_
 import config as cfg
 
 
-
 class Test(cfg.BaseTest):
-
+    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.DataFileUtil', new=lambda *a, **k: mock_dfu)
+    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.GenericsAPI', new=lambda *a, **k: mock_gapi)
+    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.run_check', new=get_mock_run_check('enigma50by30'))
+    @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.KBaseReport', new=lambda *a, **k: mock_kbr)
     def test_default_params(self):
         ret = self.serviceImpl.run_classify(
             self.ctx, {
@@ -76,7 +78,7 @@ class Test(cfg.BaseTest):
     @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.run_check', new=get_mock_run_check('enigma50by30_noAttrMaps_tooShortSeqs'))
     @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.KBaseReport', new=lambda *a, **k: mock_kbr)
     def test_too_short_seq(self):
-        ret =  self.serviceImpl.run_classify(
+        ret = self.serviceImpl.run_classify(
             self.ctx, {
                 **self.params_ws,
                 'amp_mat_upa': enigma50by30_noAttrMaps_tooShortSeqs,
@@ -86,7 +88,6 @@ class Test(cfg.BaseTest):
                 },
             })
         self._check_objects()
-
 
     @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.DataFileUtil', new=lambda *a, **k: mock_dfu)
     @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.GenericsAPI', new=lambda *a, **k: mock_gapi)
@@ -114,7 +115,6 @@ class Test(cfg.BaseTest):
             })
         self._check_objects()
 
-
     @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.DataFileUtil', new=lambda *a, **k: mock_dfu)
     @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.GenericsAPI', new=lambda *a, **k: mock_gapi)
     @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.run_check', new=get_mock_run_check('userTest', non_default_gene='silva_138_ssu'))
@@ -130,7 +130,6 @@ class Test(cfg.BaseTest):
                 },
             })
         self._check_objects()
-
 
     @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.DataFileUtil', new=lambda *a, **k: mock_dfu)
     @patch_('kb_RDP_Classifier.kb_RDP_ClassifierImpl.GenericsAPI', new=lambda *a, **k: mock_gapi)
@@ -153,14 +152,11 @@ class Test(cfg.BaseTest):
         ret = self.serviceImpl.run_classify(
             self.ctx, {
                 **self.params_ws,
-                'amp_mat_upa': enigma17770by511,
+                'amp_mat_upa': None,  # enigma17770by511,
                 'output_name': 'out_name',
             })
-        self._check_objects()   
+        self._check_objects()
 
     def _check_objects(self):
         self.assertTrue(Var.amp_mat.obj.get('row_attributemapping_ref') is not None)
         self.assertTrue(Var.amp_mat.obj.get('row_mapping') is not None)
-
-
-

@@ -5,7 +5,7 @@ Useful so you don't have to clutter up function parameters
 from dotmap import DotMap
 
 config = dict(
-    debug=True, # toggle for debugging prints/conditionals/etc.
+    debug=True,  # toggle for debugging prints/conditionals/etc.
 
 #------------------------------------------------- rdp files
 
@@ -21,7 +21,7 @@ config = dict(
     report_height=533,
 
 
-#-------------------------------------------------- 
+#--------------------------------------------------
 
     gene_id_2_name = dict(
         silva_138_ssu='SILVA 138 SSU',

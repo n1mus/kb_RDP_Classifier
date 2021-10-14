@@ -36,12 +36,12 @@ def _get_fixRank():
         id_l.append(line.split()[0])
     #
     df_fix = pd.DataFrame(
-        index=id_l, 
+        index=id_l,
         columns=[e for tup in zip(FIX_RANKS, CONF_COLS) for e in tup]
     )
 
-    tp = TimePartition()
-    
+    # tp = TimePartition()
+
     # enum all records
     for line, (id, row) in zip(lines, df_fix.iterrows()):
         toks = line.strip().split('\t')
@@ -59,13 +59,13 @@ def _get_fixRank():
         for name, rank, conf in zip(names, ranks, confs):
             if rank in FIX_RANKS:
                 name = _demangle(name)
-                replace_cols.extend([rank, rank + '_conf']) 
+                replace_cols.extend([rank, rank + '_conf'])
                 replace_vals.extend([name, conf])
 
         row[replace_cols] = replace_vals
 
-    tp.emit('For loop')
-        
+    # tp.emit('For loop')
+
     return df_fix
 
 
@@ -83,12 +83,12 @@ def get_filtered_fixRank():
     for _, row in df_fix.iterrows():
         for rank, conf_col in zip(FIX_RANKS[::-1], CONF_COLS[::-1]):
             conf = float(row[conf_col])
-            if np.isnan(conf): # no rank
+            if np.isnan(conf):  # no rank
                 continue
-            elif conf < Var.params.getd('conf'): # filtered rank
+            elif conf < Var.params.getd('conf'):  # filtered rank
                 row[conf_col] = np.nan
                 row[rank] = np.nan
-            else: # unfiltered ranks now
+            else:  # unfiltered ranks now
                 break
 
     return df_fix
@@ -102,7 +102,7 @@ def get_fix_filtered_id2tax():
     df = get_filtered_fixRank()[FIX_RANKS]
 
     def row_2_tax(row):
-        tax = ';'.join(['' if type(e) is float and np.isnan(e) else e for e in list(row)]) # fixed rank taxon names
+        tax = ';'.join(['' if type(e) is float and np.isnan(e) else e for e in list(row)])  # fixed rank taxon names
         tax = tax.strip(';') + ';'
         if tax == ';': tax = ''
         return tax

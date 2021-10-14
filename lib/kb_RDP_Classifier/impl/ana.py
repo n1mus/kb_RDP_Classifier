@@ -10,20 +10,20 @@ from ..util.debug import dprint
 
 ROOT_PATH = 'Root;'
 
-class TaxTree: 
+class TaxTree:
     '''
     For plotly sunburst with variable depth
     '''
     nodes = {}
 
     class Node:
-        
+
         def __init__(self, path_l: list):
             self.name = path_l[-1]
             self.path_l = path_l
             self.path_s = ';'.join(path_l) + ';'
             self.count = 0
-            self._num_leaf = 0 # number paths ending here
+            self._num_leaf = 0  # number paths ending here
 
         @property
         def id(self):
@@ -40,16 +40,16 @@ class TaxTree:
                 return self.name
             else:
                 return self.path_l[2]
-        
+
     @classmethod
     def build(cls, id2tax) -> None:
         id2tax = {
             id: ROOT_PATH + tax for id, tax in id2tax.items()
         }
-        id2tax = {k: v for k, v in sorted(id2tax.items(), key=lambda item: item[1])} # sort dict by value so sunburst is alphabetical
+        id2tax = {k: v for k, v in sorted(id2tax.items(), key=lambda item: item[1])}  # sort dict by value so sunburst is alphabetical
 
         cls.nodes.clear()
-        cls.num_records = len(id2tax) 
+        cls.num_records = len(id2tax)
 
         for id, tax in id2tax.items():
             taxname_l = tax.split(';')[:-1]
@@ -88,11 +88,11 @@ class TaxTree:
     @classmethod
     def get_sunburst_lists(cls) -> tuple:
 
-        names = [] # labels
-        parent_ids = [] # parents
-        counts = [] # values
-        ids = [] # ids
-        color_ids = [] # color_ids
+        names = []  # labels
+        parent_ids = []  # parents
+        counts = []  # values
+        ids = []  # ids
+        color_ids = []  # color_ids
 
         for path_s, node in cls.nodes.items():
             names.append(node.name)
@@ -134,13 +134,13 @@ def get_rank2confs():
         rank2confs[rank] = conf_l
 
     return rank2confs
-        
+
 
 def hist_0_1_10(l):
     '''Use np to hist but with [s,e) instead of (s,e] by nudging edges ever so slightly back
     Rightmost max values nudged even more back so last bin catches them'''
-    femto = 1e-15 # femto nudge bin edges back
-    micro = 1e-6 # micro nudge rightmost max values back
+    femto = 1e-15  # femto nudge bin edges back
+    micro = 1e-6  # micro nudge rightmost max values back
     l = [e if e<1 else e-micro for e in l]
     h = np.histogram(l, range=[0-femto,1-femto], bins=10)[0]
     return h

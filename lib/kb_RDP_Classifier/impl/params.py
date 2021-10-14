@@ -26,20 +26,20 @@ class Params:
 
     Use `params.getd` for default-backed params
 
-    Also the parameter groups are an effect of the app cell ui, 
+    Also the parameter groups are an effect of the app cell ui,
     and params will be flattened right away
     '''
 
     DEFAULTS = {
-       'conf': 0.8,                 
-       'gene': 'silva_138_ssu',           
+       'conf': 0.8,
+       'gene': 'silva_138_ssu',
     }
 
     # always required, whether front or back end call
     REQUIRED = [
         'amp_mat_upa',
         'output_name',
-        'workspace_id', # for saving obj
+        'workspace_id',  # for saving obj
     ]
 
     ALL = [
@@ -62,7 +62,7 @@ class Params:
 
         ## Flatten
         params = self.flatten(params)
-        
+
         self.params = params
 
 
@@ -102,13 +102,13 @@ class Params:
         return d
 
 
- 
+
     @property
     def cli_args(self) -> list:
         '''
         Non-default RDP Classifier `classify` CLI args
         '''
-       
+
         cli_args = []
 
         if self.getd('conf') != self.DEFAULTS['conf']:

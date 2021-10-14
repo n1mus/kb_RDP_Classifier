@@ -1,21 +1,10 @@
-import os
-import unittest
-from unittest.mock import patch
 import json
-import uuid
 
-import numpy as np
 from pytest import raises
 
-from kb_RDP_Classifier.util.debug import dprint, where_am_i
+from kb_RDP_Classifier.util.debug import dprint
 from kb_RDP_Classifier.impl.params import Params
 from kb_RDP_Classifier.impl.globals import Var
-from kb_RDP_Classifier.impl.kbase_obj import AmpliconMatrix, AttributeMapping
-from data import *
-
-
-
-
 
 
 def test_validation():
@@ -67,7 +56,6 @@ def test_flatten():
     assert flatd['key5'] == 'gnat'
 
 
-
 def test_default():
     params = Params({
         'workspace_id': 'ws_id',
@@ -80,7 +68,7 @@ def test_default():
     })
 
     assert params['amp_mat_upa'] == '1/2/3'
-    assert params['output_name'] is 'out_name'
+    assert params['output_name'] == 'out_name'
     assert params.getd('conf') == 0.8
     assert params.getd('gene') == 'silva_138_ssu'
     assert(
@@ -91,12 +79,13 @@ def test_default():
     ), json.dumps(params.get_prose_args(), indent=4)
     assert(
         params.cli_args == [
-            '--train_propfile', 
+            '--train_propfile',
             Var.propfile['silva_138_ssu'],
         ]
     ), params.cli_args
-    
-    str(params) # should not throw
+
+    str(params)  # should not throw
+
 
 def test_non_default():
     params = Params({
@@ -122,9 +111,9 @@ def test_non_default():
     assert(
         params.cli_args == [
             '--conf', '0.99999', '--gene', 'fungallsu',
-        ] 
+        ]
     ), params.cli_args
-    str(params) # should not throw
+    str(params)  # should not throw
 
 
 def test_no_user_supplied_values():
@@ -146,12 +135,9 @@ def test_no_user_supplied_values():
     ), json.dumps(params.get_prose_args(), indent=4)
     assert(
         params.cli_args == [
-            '--train_propfile', 
+            '--train_propfile',
             Var.propfile['silva_138_ssu'],
         ]
     ), params.cli_args
-    
-    str(params) # should not throw
 
-
-
+    str(params)  # should not throw

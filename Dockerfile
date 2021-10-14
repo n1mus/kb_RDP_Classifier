@@ -1,14 +1,6 @@
 FROM kbase/sdkbase2:python
 MAINTAINER KBase Developer
 # -----------------------------------------
-# In this section, you can install any system dependencies required
-# to run your App.  For instance, you could place an apt-get update or
-# install line here, a git checkout to download code, or run any other
-# installation scripts.
-
-# increment to rerun Dockerfile on system
-RUN echo 'hi 1'
-
 RUN apt-get update
 ENV PYTHONUNBUFFERED=True
 
@@ -16,15 +8,17 @@ RUN apt-get install --yes vim
 
 WORKDIR /opt
 
-# TODO pin this? rn changes with latest release
-RUN curl --location https://sourceforge.net/projects/rdp-classifier/files/latest/download > rdp_classifier.zip && \
+RUN curl --insecure --location https://sourceforge.net/projects/rdp-classifier/files/rdp-classifier/rdp_classifier_2.13.zip/download > rdp_classifier.zip && \
 unzip rdp_classifier.zip && \
 rm rdp_classifier.zip
 
-RUN pip install pandas dotmap plotly
-RUN pip install pipenv coverage pytest-cov python-coveralls flake8 
-RUN pip install plotly==4.14.3 kaleido
+RUN pip install --upgrade pip
+RUN pip install \
+    pandas dotmap plotly==4.14.3 \
+    pipenv coverage pytest-cov python-coveralls flake8 
 
+# parameters from training RDP Clsf on SILVA
+# are on Google Drive
 RUN pip install gdown
 RUN mkdir /refdata && \
 cd /refdata && \

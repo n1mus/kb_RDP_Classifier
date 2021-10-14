@@ -12,8 +12,8 @@ class NonZeroReturnException(Exception): pass
 
 def run_check(cmd: str, shell=True):
     logging.info('Running cmd `%s`' % cmd)
-    t0 = time.time() 
-    
+    t0 = time.time()
+
     completed_proc = subprocess.run(cmd, shell=shell, executable='/bin/bash', stdout=sys.stdout, stderr=sys.stderr)
 
     logging.info('Took %.2fmin' % ((time.time() - t0)/60))

@@ -21,9 +21,9 @@ pd.set_option('display.width', 1000)
 pd.set_option('display.max_colwidth', 14)
 '''
 
-IMG_HEIGHT = Var.report_height # px. don't make too big or title will shrink relatively
-MAX_DATA = 4000 # threshold for static hiding
-DO_STATIC = True # toggle the hiding behind static thing
+IMG_HEIGHT = Var.report_height  # px. don't make too big or title will shrink relatively
+MAX_DATA = 4000  # threshold for static hiding
+DO_STATIC = True  # toggle the hiding behind static thing
 
 # TODO **** testing graph info
 # TODO (nice-to-have) separate plotly js library into dir
@@ -48,9 +48,9 @@ def do_pie_hist(html_flpth):
 
     #
     trace0 = go.Pie(
-        labels=list(counts.keys())[::-1], # rev so color matches hist
-        values=list(counts.values())[::-1], 
-        textinfo='label+percent', 
+        labels=list(counts.keys())[::-1],  # rev so color matches hist
+        values=list(counts.values())[::-1],
+        textinfo='label+percent',
         hovertemplate=(
             'Rank: %{customdata[0]} <br>'
             'Percentage of amplicons: %{percent} <br>'
@@ -58,24 +58,24 @@ def do_pie_hist(html_flpth):
             '<extra></extra>'
         ),
         sort=False,
-        rotation=90, # try to get 0s out of title. this num means 'genus' sector will end at 90 and 'family' will begin at 90
+        rotation=90,  # try to get 0s out of title. this num means 'genus' sector will end at 90 and 'family' will begin at 90
         showlegend=False,
         marker_colors=palette,
         customdata=[tax_lvl.title() for tax_lvl in list(counts.keys())[::-1]],
     )
-    
-    logging.info('Generating histogram') 
+
+    logging.info('Generating histogram')
     rank2confs = ana.get_rank2confs()
 
     hovertemplate = (
         'Rank: %s <br>'
-        'Confidence bin: %%{customdata[0]} <br>' # TODO confidence before proportion
+        'Confidence bin: %%{customdata[0]} <br>'  # TODO confidence before proportion
         'Proportion of amplicons: %%{y:.3g} <br>'
         'Amplicon count: %%{customdata[1]}/%d <br>'
         '<extra></extra>'
     )
     bin_s_l = [
-        ('[%g, %g]' if i==9 else '[%g, %g)') % (i/10, i/10+.1) # plotly hist bin edges are [start,end)
+        ('[%g, %g]' if i==9 else '[%g, %g)') % (i/10, i/10+.1)  # plotly hist bin edges are [start,end)
         for i in range(10)
     ]
 
@@ -96,15 +96,15 @@ def do_pie_hist(html_flpth):
         #if rank == 'domain': dprint('rank', 'conf_l', 'h', 'len(h)')
         trace1_l.append(
             go.Histogram(
-                x=[c if c<1 else c-1e-6 for c in conf_l], # micro nudge right-most max back
+                x=[c if c<1 else c-1e-6 for c in conf_l],  # micro nudge right-most max back
                 xbins=dict(
-                    start=0, 
+                    start=0,
                     end=1,
                     size=0.1,
                 ),
                 autobinx=False,
-                histnorm='probability', 
-                name=rank, 
+                histnorm='probability',
+                name=rank,
                 customdata=clip_customdata(h, bin_s_l, h),
                 hovertemplate=hovertemplate % (
                     rank.title(),
@@ -116,7 +116,7 @@ def do_pie_hist(html_flpth):
     # subplots
 
     fig = make_subplots(
-        rows=2, 
+        rows=2,
         cols=1,
         subplot_titles=(
             'Taxonomy Cutoff Rank<br>(conf=%s)' % Var.params.get_prose_args()['conf'],
@@ -159,11 +159,11 @@ def do_pie_hist(html_flpth):
             itemclick='toggleothers',
             itemdoubleclick='toggle',
         ),
-        margin_t=40, # px, default 100
+        margin_t=40,  # px, default 100
     )
 
     fig.write_html(
-        html_flpth, 
+        html_flpth,
         full_html=False
     )
 
@@ -177,17 +177,17 @@ def do_sunburst(html_flpth,png_flpth):
     logging.info('Generating sunburst')
 
     ana.TaxTree.build(app_file.get_fix_filtered_id2tax())
-    names, parents, counts, paths, color_ids = ana.TaxTree.get_sunburst_lists() # first el is Root
+    names, parents, counts, paths, color_ids = ana.TaxTree.get_sunburst_lists()  # first el is Root
 
     palette = px.colors.qualitative.Alphabet
     id2ind = {
-        color_id: i 
-        for i, color_id 
+        color_id: i
+        for i, color_id
         in enumerate(
-            sorted(list(set(color_ids))) # deterministic unique color_ids
+            sorted(list(set(color_ids)))  # deterministic unique color_ids
         )
-    } # map color ids to int
-    colors = ['#FFFFFF'] + [palette[id2ind[color_id] % len(palette)] for color_id in color_ids[1:]] # Root is white
+    }  # map color ids to int
+    colors = ['#FFFFFF'] + [palette[id2ind[color_id] % len(palette)] for color_id in color_ids[1:]]  # Root is white
 
     fig = go.Figure(go.Sunburst(
         ids=paths,
@@ -201,7 +201,7 @@ def do_sunburst(html_flpth,png_flpth):
             'Taxon: %{label}<br>'
             'Path: %{id}<br>'
             'Amplicon count: %{value}'
-            '<extra></extra>' # hide secondary hover box
+            '<extra></extra>'  # hide secondary hover box
         ),
         branchvalues='total',
         sort=False,
@@ -248,7 +248,7 @@ class HTMLReportWriter:
 
 
     def _compile_cmd_tab_body(self):
-        
+
         txt = ''
 
         for cmd in self.cmd_l:
@@ -275,7 +275,7 @@ class HTMLReportWriter:
             #'<div id="imgLink">\n'
             '<a href="%s" target="_blank" title="Open to interact">\n'
             '<img alt="%s" src="%s">\n'
-            '</a>\n' 
+            '</a>\n'
             #'</div>\n'
         )
         iframe_s = (
@@ -311,7 +311,7 @@ class HTMLReportWriter:
     def write(self):
         self._compile_cmd_tab_body()
         self._compile_figure_tab_bodies()
-        
+
         html_flpth = os.path.join(Var.report_dir, 'report.html')
 
         with open(Var.report_template_flpth) as src_fh:

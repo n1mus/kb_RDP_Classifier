@@ -3,23 +3,17 @@ import time
 import unittest
 from unittest.mock import patch
 from configparser import ConfigParser
-import json
-import uuid
-
-import pytest
-import numpy as np
 
 from installed_clients.WorkspaceClient import Workspace
-from kb_RDP_Classifier.authclient import KBaseAuth as _KBaseAuth
+from installed_clients.authclient import KBaseAuth as _KBaseAuth
 from kb_RDP_Classifier.kb_RDP_ClassifierServer import MethodContext
 from kb_RDP_Classifier.kb_RDP_ClassifierImpl import kb_RDP_Classifier
 
 
+######################################
+DO_PATCH = False  # toggle patching for tests that can run independently of it
 
-###################################### 
-do_patch = True # toggle patching for tests that can run independently of it
-
-if do_patch:
+if DO_PATCH:
     patch_ = patch
     patch_dict_ = patch.dict
 else:
@@ -35,6 +29,7 @@ req = dict(
     output_name='out_name',
 )
 ######################################
+
 
 class BaseTest(unittest.TestCase):
 
@@ -66,11 +61,11 @@ class BaseTest(unittest.TestCase):
         cls.wsClient = Workspace(cls.wsURL)
         suffix = int(time.time() * 1000)
         cls.wsName = "kb_RDP_Classifier_" + str(suffix)
-        cls.wsId = cls.wsClient.create_workspace({'workspace': cls.wsName})[0]                      
-        cls.params_ws = {                                                                           
-            'workspace_id': cls.wsId,                                                               
-            'workspace_name': cls.wsName,                                                           
-        } 
+        cls.wsId = cls.wsClient.create_workspace({'workspace': cls.wsName})[0]
+        cls.params_ws = {
+            'workspace_id': cls.wsId,
+            'workspace_name': cls.wsName,
+        }
         cls.serviceImpl = kb_RDP_Classifier(cls.cfg)
         cls.scratch = cls.cfg['scratch']
         cls.callback_url = os.environ['SDK_CALLBACK_URL']
@@ -82,8 +77,4 @@ class BaseTest(unittest.TestCase):
             print('Test workspace was deleted')
 
     def shortDescription(self):
-        '''Override unittest using test*() docstrings in lieu of test*() method name in output summary'''
         return None
-
-
-

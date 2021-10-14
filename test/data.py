@@ -34,7 +34,7 @@ enigma50by30_noAttrMaps_tooShortSeqs = '55136/6/1'
 enigma50by30 = '55136/15/1'
 enigma50by30_rowAttrMap = '55136/11/1'
 
-enigma17770by511 = '55136/26/1' # AmpliconMatrix
+enigma17770by511 = '55136/26/1'  # AmpliconMatrix
 enigma17770by511_rowAttrMap = '55136/19/1'
 '''
 ####################################################################################################
@@ -65,7 +65,7 @@ def mock_gapi_fetch_sequence(params):
 
     upa = ref_leaf(params)
     fp = _glob_upa(FETCH_SEQUENCE_DIR, upa)
-    
+
     # Download and cache
     if fp is None:
         logging.info('Calling in cache mode `gapi.fetch_sequence(%s)`' % str(params))
@@ -93,14 +93,14 @@ def get_mock_gapi():
     return mock_gapi
 
 mock_gapi = get_mock_gapi()
-        
+
 
 ## MOCK DFU ##
 
 def mock_dfu_save_objects(params):
     logging.info('Mocking dfu.save_objects(%s)' % str(params)[:200] + '...' if len(str(params)) > 200 else params)
 
-    return [['mock', 1, 2, 3, 'dfu', 5, 'save_objects']] # UPA made from pos 6/0/4
+    return [['mock', 1, 2, 3, 'dfu', 5, 'save_objects']]  # UPA made from pos 6/0/4
 
 def mock_dfu_get_objects(params):
     logging.info('Mocking `dfu.get_objects(%s)`' % params)
@@ -181,7 +181,7 @@ def mock_create_extended_report(params):
         'ref': 'kbr/mock/ref',
     }
 
-mock_kbr = create_autospec(KBaseReport, instance=True, spec_set=True) 
+mock_kbr = create_autospec(KBaseReport, instance=True, spec_set=True)
 mock_kbr.create_extended_report.side_effect = mock_create_extended_report
 
 ## UTIL ##
